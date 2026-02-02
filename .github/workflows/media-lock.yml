@@ -28,8 +28,22 @@ jobs:
           grep -E -n "img\.onload\s*=\s*" media_loader/mediaLoader.ts
           grep -E -n "video\.onloadedmetadata\s*=\s*" media_loader/mediaLoader.ts
 
+      - name: Enforce no multi-event finish flows in loader (lock)
+        run: |
+          set -euo pipefail
+          echo "Ensuring no forbidden patterns in media loader"
+          # These patterns previously caused regressions by racing dimension readiness.
+          if grep -E -n "(loadeddata|canplay)" media_loader/mediaLoader.ts; then
+            echo "Forbidden event handler detected in media loader" && exit 1
+          fi
+          if grep -E -n "addEventListener\s*\(\s*'(loaded|canplay)" media_loader/mediaLoader.ts; then
+            echo "Forbidden addEventListener for media readiness detected" && exit 1
+          fi
+          if grep -E -n "function\s+finish\s*\(|const\s+finish\s*=\s*\(" media_loader/mediaLoader.ts; then
+            echo "Forbidden finish() aggregator detected in loader" && exit 1
+          fi
+
       - name: Verify file input routes into handler
         run: |
           set -euo pipefail
           grep -E -n "onChange=\{\(e\)\s*=>\s*\{[\s\S]*onFileSelect\(f\)" components/Panels/FilePanel.tsx
-
