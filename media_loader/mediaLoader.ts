@@ -58,7 +58,8 @@ export function loadImageTo(img: HTMLImageElement, canvas: HTMLCanvasElement | n
       resolve({ url, width: w, height: h });
     };
     img.onerror = (e) => {
-      console.error('[Import] Image load error:', e);
+      // Non-intrusive, explicit warning path (no behavior change)
+      console.error('[Media Core] Image load error. This should not fail silently.', e);
       reject(e);
     };
     img.src = url;
@@ -86,7 +87,8 @@ export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement |
     };
     video.onloadedmetadata = onMeta;
     video.onerror = (e) => {
-      console.error('[Import] Video load error:', e);
+      // Non-intrusive, explicit warning path (no behavior change)
+      console.error('[Media Core] Video load error. This should not fail silently.', e);
       reject(e as any);
     };
     video.src = url;

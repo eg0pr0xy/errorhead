@@ -159,7 +159,7 @@ const App: React.FC = () => {
           }
       }
   };
-// MEDIA ENTRY — KNOWN-GOOD SHARED PATH (DO NOT SPLIT)
+// MEDIA ENTRY — KNOWN-GOOD SHARED PATH (DO NOT SPLIT IMAGE AND VIDEO PIPELINES)
 // One handler → one type check → one CanvasImageSource fed to renderer.
 // Do not refactor casually. Past changes that fanned out into multiple
 // event paths broke dimension readiness and stalled both imports.
@@ -393,6 +393,26 @@ const renderFrame = async (timestamp: number) => {
       }
 
       if (isMediaReady && source && width > 0 && height > 0) {
+        // DEV-ONLY GUARDRAILS (non-intrusive): assert positive sizes
+        if ((import.meta as any)?.env?.DEV) {
+          if (!(width > 0 && height > 0)) {
+            console.warn('[Media Core] Canvas sizing check failed (width/height <= 0).');
+          }
+          if (sourceTypeRef.current === 'image' && imgRef.current) {
+            const iw = (imgRef.current as HTMLImageElement).naturalWidth;
+            const ih = (imgRef.current as HTMLImageElement).naturalHeight;
+            if (!(iw > 0 && ih > 0)) {
+              console.warn('[Media Core] Image natural dimensions are zero; onload may not have fired.');
+            }
+          }
+          if (sourceTypeRef.current === 'video' && videoRef.current) {
+            const vw = (videoRef.current as HTMLVideoElement).videoWidth;
+            const vh = (videoRef.current as HTMLVideoElement).videoHeight;
+            if (!(vw > 0 && vh > 0)) {
+              console.warn('[Media Core] Video metadata dimensions are zero; onloadedmetadata may not have fired.');
+            }
+          }
+        }
          // Resolution lock override
          let outW = width, outH = height;
          if (lockRes && lockWidth > 0 && lockHeight > 0) {
@@ -615,6 +635,7 @@ return (
 
       {/* Hidden Source Elements — REQUIRED for the shared media contract.
           The renderer reads from these refs as a single CanvasImageSource.
+          DO NOT SPLIT IMAGE AND VIDEO PIPELINES.
           Do not remove or create parallel sources. */}
       <div className="hidden">
         <img ref={imgRef} crossOrigin="anonymous" alt="source" />
