@@ -1,5 +1,26 @@
 
 import { GlitchParams } from '../types';
+
+/*
+ * EFFECTS/ENGINE BOUNDARY (LOCKED)
+ * ---------------------------------
+ * Where effects may operate:
+ * - Only on the provided Canvas contexts and buffers (B.*, inCtx, compCtx, moshCtx, swapCtx).
+ * - Effects consume the CanvasImageSource passed by the renderer; they DO NOT create media elements.
+ *
+ * Where audio modulation may hook in:
+ * - Via audioService feature extraction to modulate GlitchParams (see the audio modulation block below).
+ * - Audio may change parameters; it MUST NOT create or load media elements.
+ *
+ * Where temporal buffers may read frames:
+ * - From the current frame and history buffers (B.input/B.mosh/B.compose and S.historyFrames).
+ * - Temporal effects MAY read/draw between canvases; they DO NOT create <img>/<video> or load files.
+ *
+ * DO NOT:
+ * - Create <img> or <video> elements here.
+ * - Call URL.createObjectURL or load files from effects.
+ * - Split the media pipelines. Effects only consume frames.
+ */
 import { webglMoshService } from './webglService';
 import { 
   state as globalState, 
@@ -171,6 +192,8 @@ export const renderGlitch = async (
   }
 
   // 3. Input Processing
+  // Effects operate on canvases only. The source is a CanvasImageSource supplied
+  // by the renderer; DO NOT create media elements here. DO NOT load files here.
   inCtx.clearRect(0, 0, width, height);
   if (params.holdMode) {
     const timeSinceInject = tGlobal - S.lastInjectTime;

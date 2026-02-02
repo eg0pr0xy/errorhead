@@ -43,6 +43,49 @@ jobs:
             echo "Forbidden finish() aggregator detected in loader" && exit 1
           fi
 
+      - name: Lock boundaries — only App.tsx may import media loader
+        run: |
+          set -euo pipefail
+          echo "Checking that only App.tsx imports media_loader/mediaLoader"
+          IMPORTS=$(rg -n "from './media_loader/mediaLoader'" -S | wc -l)
+          if [ "$IMPORTS" -ne 1 ]; then
+            echo "Expected exactly 1 import site for media loader, found $IMPORTS" && rg -n "from './media_loader/mediaLoader'" -S && exit 1
+          fi
+          # Ensure that single import is in App.tsx
+          if ! rg -n "from './media_loader/mediaLoader'" -S App.tsx >/dev/null; then
+            echo "media loader must only be imported in App.tsx" && exit 1
+          fi
+
+      - name: Lock boundaries — forbid media loader in services/effects
+        run: |
+          set -euo pipefail
+          if rg -n "media_loader/mediaLoader" -S services glitch_ops datamosh_ops engine frame_pipeline >/dev/null; then
+            echo "Forbidden media loader import detected outside App.tsx" && rg -n "media_loader/mediaLoader" -S services glitch_ops datamosh_ops engine frame_pipeline && exit 1
+          fi
+
+      - name: Lock boundaries — forbid media element creation in effects/services
+        run: |
+          set -euo pipefail
+          # Disallow creating <img>/<video> elements or using Image constructor outside App/media_loader
+          if rg -n "new\s+Image\s*\(" -S services glitch_ops datamosh_ops engine frame_pipeline >/dev/null; then
+            echo "Forbidden new Image() outside media core" && rg -n "new\s+Image\s*\(" -S services glitch_ops datamosh_ops engine frame_pipeline && exit 1
+          fi
+          if rg -n "document\.createElement\(\s*['\"](img|video)['\"]\s*\)" -S services glitch_ops datamosh_ops engine frame_pipeline >/dev/null; then
+            echo "Forbidden document.createElement(img|video) outside media core" && rg -n "document\.createElement\(\s*['\"](img|video)['\"]\s*\)" -S services glitch_ops datamosh_ops engine frame_pipeline && exit 1
+          fi
+          # Disallow URL.createObjectURL outside App/media_loader
+          if rg -n "URL\.createObjectURL\(" -S services glitch_ops datamosh_ops engine frame_pipeline >/dev/null; then
+            echo "Forbidden URL.createObjectURL outside media core" && rg -n "URL\.createObjectURL\(" -S services glitch_ops datamosh_ops engine frame_pipeline && exit 1
+          fi
+
+      - name: Lock boundaries — single render entry
+        run: |
+          set -euo pipefail
+          echo "Ensuring renderGlitch is only invoked from App.tsx"
+          if rg -n "renderGlitch\(" -S | grep -v "App.tsx:" >/dev/null; then
+            echo "renderGlitch must only be called from App.tsx" && rg -n "renderGlitch\(" -S && exit 1
+          fi
+
       - name: Verify file input routes into handler
         run: |
           set -euo pipefail
