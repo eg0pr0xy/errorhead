@@ -27,5 +27,3 @@ dist-ssr
 *.md
 !README.md
 
-# Optional landing video (user-supplied)
-public/landing.*
