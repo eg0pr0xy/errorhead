@@ -1,4 +1,4 @@
-name: Deploy to gh-pages
+name: Build docs site
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-deploy:
+  build-to-docs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,9 +27,15 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Replace docs with dist
+        run: |
+          rm -rf docs
+          mkdir -p docs
+          cp -R dist/* docs/
+
+      - name: Commit docs
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          commit_message: "docs(site): update built site in /docs"
+          file_pattern: docs/**
 
