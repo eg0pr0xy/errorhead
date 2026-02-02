@@ -19,5 +19,4 @@ Usage
 
 Signals
 - No cloud, no trackers, no keys
-- Only `README.md` is public; internal docs stay dark
-
+- Contributions are welcome
