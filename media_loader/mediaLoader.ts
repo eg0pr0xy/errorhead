@@ -7,6 +7,11 @@ import React, { MutableRefObject } from 'react';
  * It intentionally keeps two minimal loaders that both end in the SAME
  * render contract for the renderer: a sized canvas + a ready HTML element.
  *
+ * Media Contract (explicit)
+ * - Image: static frame source; width/height known after onload.
+ * - Video: dynamic frame source; width/height known after onloadedmetadata; frames update per animation frame.
+ * - Both: must deliver a drawable frame via the SAME render entry point (CanvasImageSource).
+ *
  * RULES (DO NOT REFACTOR CASUALLY):
  * - Image uses onload + naturalWidth/naturalHeight. Size canvas there.
  * - Video uses onloadedmetadata + videoWidth/videoHeight. Size canvas there.

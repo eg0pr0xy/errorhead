@@ -14,6 +14,24 @@ import { getImageDims, getVideoDims } from './services/mediaUtils';
 import { DEFAULT_PARAMS } from './constants';
 import { GlitchParams, AnimationState } from './types';
 
+/*
+ Media Contract (LOCKED)
+ -----------------------
+ Image
+ - Static frame source (HTMLImageElement)
+ - Width/height known after onload
+
+ Video
+ - Dynamic frame source (HTMLVideoElement)
+ - Width/height known after onloadedmetadata
+ - Frame updates per animation frame
+
+ Both
+ - Must deliver a drawable frame
+ - Must use the SAME render entry point: a single CanvasImageSource variable
+   (`source`) passed to the renderer.
+*/
+
 const App: React.FC = () => {
   // --- STATE ---
   const [isLanding, setIsLanding] = useState(false); // DEBUG: Skip landing
@@ -328,6 +346,7 @@ const renderFrame = async (timestamp: number) => {
          setAnimState(prev => ({ ...prev, currentTime: nextTime }));
       }
 
+      // Single render entry point: one CanvasImageSource for both media kinds
       let source: CanvasImageSource | null = null;
       let width = 0;
       let height = 0;
