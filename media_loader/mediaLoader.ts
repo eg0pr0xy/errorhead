@@ -45,22 +45,9 @@ export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement |
   revokeUrl(lastUrlRef);
   const url = URL.createObjectURL(file);
   lastUrlRef.current = url;
-
-  // Ensure proper flags for autoplay policies across browsers
-  video.muted = true;
-  (video as any).playsInline = true;
-  video.loop = true;
-  video.preload = 'auto';
-
   return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      video.removeEventListener('loadedmetadata', onMeta);
-      video.removeEventListener('loadeddata', onData);
-      video.removeEventListener('canplay', onCanPlay);
-      video.removeEventListener('error', onError as any);
-    };
-
-    const finish = () => {
+    const onMeta = () => {
+      try { console.log('[Import] video onloadedmetadata'); } catch {}
       const w = video.videoWidth || 0;
       const h = video.videoHeight || 0;
       if (canvas && w > 0 && h > 0) {
@@ -68,31 +55,16 @@ export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement |
         canvas.height = h;
         console.log(`[Import] Video loaded: ${w}x${h}, canvas set to ${canvas.width}x${canvas.height}`);
       }
-      cleanup();
       resolve({ url, width: w, height: h });
     };
-
-    const onMeta = () => { try { console.log('[Import] video onloadedmetadata'); } catch {}; if (video.videoWidth && video.videoHeight) finish(); };
-    const onData = () => { try { console.log('[Import] video onloadeddata'); } catch {}; if (video.videoWidth && video.videoHeight) finish(); };
-    const onCanPlay = () => { try { console.log('[Import] video canplay'); } catch {}; if (video.videoWidth && video.videoHeight) finish(); };
-    const onError = (e: Event) => { console.error('[Import] Video load error:', e); cleanup(); reject(e as any); };
-
-    video.addEventListener('loadedmetadata', onMeta);
-    video.addEventListener('loadeddata', onData);
-    video.addEventListener('canplay', onCanPlay);
-    video.addEventListener('error', onError as any, { once: true });
-
-    // Apply source last
+    video.onloadedmetadata = onMeta;
+    video.onerror = (e) => {
+      console.error('[Import] Video load error:', e);
+      reject(e as any);
+    };
     video.src = url;
     try { video.load(); } catch {}
-    // Attempt autoplay (allowed if muted)
-    video.play().then(() => { try { console.log('[Import] video play started'); } catch {} }).catch((err) => {
-      try { console.warn('[Import] Autoplay blocked, waiting for user gesture', err); } catch {}
-    });
-
-    // Fallback: if events don't fire but dimensions are available shortly after
-    setTimeout(() => {
-      if (video.videoWidth && video.videoHeight) finish();
-    }, 500);
+    // Attempt autoplay (muted/inline)
+    video.play().then(() => { try { console.log('[Import] video play started'); } catch {} }).catch(() => {/* autoplay may be blocked; user can press play */});
   });
 }

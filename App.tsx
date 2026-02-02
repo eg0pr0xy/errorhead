@@ -16,7 +16,7 @@ import { GlitchParams, AnimationState } from './types';
 
 const App: React.FC = () => {
   // --- STATE ---
-  const [isLanding, setIsLanding] = useState(true);
+  const [isLanding, setIsLanding] = useState(false); // DEBUG: Skip landing
   const [isExiting, setIsExiting] = useState(false);
   
   const [params, setParams] = useState<GlitchParams>(DEFAULT_PARAMS);
@@ -494,9 +494,8 @@ const renderFrame = async (timestamp: number) => {
 
 
   const startEnterTransition = () => {
-    try { audioService.resume(); } catch {}
-    try { setParams(p => ({ ...p, audioEnabled: true, audioSource: 'mic' } as any)); } catch {}
     setIsExiting(true);
+    // Match this duration to the CSS animation length (0.8s)
     setTimeout(() => {
       setIsLanding(false);
       setIsExiting(false);
@@ -594,7 +593,7 @@ return (
       {/* Hidden Source Elements */}
       <div className="hidden">
         <img ref={imgRef} crossOrigin="anonymous" alt="source" />
-        <video ref={videoRef} crossOrigin="anonymous" loop muted playsInline preload="metadata" />
+        <video ref={videoRef} crossOrigin="anonymous" loop muted playsInline />
       </div>
 
       {/* Main Studio Layout */}
