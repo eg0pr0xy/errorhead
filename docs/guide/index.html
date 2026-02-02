@@ -7,35 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-      :root { --bg:#050505; --fg:#e4e4e7; --muted:#a1a1aa; --line:#27272a; --cyan:#06b6d4; --accent:#22d3ee; }
-      * { box-sizing: border-box }
-      html,body { margin:0; padding:0; background:var(--bg); color:var(--fg); font-family:'JetBrains Mono', monospace; }
-      a { color: var(--accent); text-decoration: none }
-      a:hover { text-decoration: underline }
-      .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 20px 64px }
-      .grid-bg { position: fixed; inset: 0; pointer-events: none; opacity: .08; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 40px 40px }
-      .hdr { display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:rgba(0,0,0,.7); backdrop-filter: blur(4px); padding:12px 0; border-bottom:1px solid var(--line); z-index:5 }
-      .brand { display:flex; gap:10px; align-items:center }
-      .led { width:10px; height:10px; background:#ef4444; box-shadow:0 0 10px #ef4444; animation: blip 1.2s infinite }
-      @keyframes blip { 0%,100%{opacity:1} 50%{opacity:.3} }
-      h1 { font-family:'Rajdhani',sans-serif; letter-spacing:.15em; font-size:22px; margin:0 }
-      .hero { padding:36px 0 8px; border-bottom:1px solid var(--line) }
-      .hero pre { margin:0; white-space:pre-wrap; line-height:1.15; color:#cbd5e1 }
-      .hero .tag { display:inline-block; margin-top:10px; padding:2px 8px; border:1px solid var(--line); color:var(--muted); font-size:12px }
-      section { padding:28px 0; border-bottom:1px dashed var(--line) }
-      h2 { font-family:'Rajdhani',sans-serif; letter-spacing:.12em; font-size:18px; margin:0 0 12px; color:#e5e7eb }
-      p { color: var(--muted); margin: 8px 0 14px }
-      ul { margin: 8px 0 8px 18px; color: var(--fg) }
-      li { margin: 6px 0 }
-      code,kbd { background:#0a0a0a; border:1px solid var(--line); padding:2px 6px; font-size:12px }
-      .cards { display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:14px }
-      .card { border:1px solid var(--line); padding:14px; background:#09090b }
-      .note { border-left:3px solid var(--cyan); padding:10px 12px; background:#0a0a0a; color:#cbd5e1 }
-      footer { color:var(--muted); font-size:12px; padding-top:24px }
-      .btn { display:inline-block; border:1px solid var(--line); padding:6px 10px; background:#0b0b0c; color:#e5e7eb }
-      .btn:hover { border-color:#3f3f46 }
-    </style>
+    <link rel="stylesheet" href="assets/styles.css" />
   </head>
   <body>
     <div class="grid-bg"></div>
@@ -43,10 +15,16 @@
       <header class="hdr">
         <div class="brand">
           <div class="led"></div>
-          <h1>ERRORHEAD <span style="opacity:.55;font-size:12px">// docs</span></h1>
+          <h1>ERRORHEAD <span class="sub">// docs</span></h1>
         </div>
-        <nav style="display:flex; gap:12px; align-items:center">
-          <a class="btn" href="../">← Back to Studio</a>
+        <nav class="nav">
+          <a class="nav-link active" href="index.html">Overview</a>
+          <a class="nav-link" href="engine.html">Engine</a>
+          <a class="nav-link" href="audio.html">Audio</a>
+          <a class="nav-link" href="export.html">Export</a>
+          <a class="nav-link" href="recipes.html">Recipes</a>
+          <span class="spacer"></span>
+          <a class="btn" href="../">← Studio</a>
           <a class="btn" href="https://github.com/eg0pr0xy/errorhead">GitHub</a>
         </nav>
       </header>

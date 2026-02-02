@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERRORHEAD // Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="grid-bg"></div>
+    <div class="wrap">
+      <header class="hdr">
+        <div class="brand">
+          <div class="led"></div>
+          <h1>ERRORHEAD <span class="sub">// engine</span></h1>
+        </div>
+        <nav class="nav">
+          <a class="nav-link" href="index.html">Overview</a>
+          <a class="nav-link active" href="engine.html">Engine</a>
+          <a class="nav-link" href="audio.html">Audio</a>
+          <a class="nav-link" href="export.html">Export</a>
+          <a class="nav-link" href="recipes.html">Recipes</a>
+          <span class="spacer"></span>
+          <a class="btn" href="../">← Studio</a>
+          <a class="btn" href="https://github.com/eg0pr0xy/errorhead">GitHub</a>
+        </nav>
+      </header>
+
+      <section>
+        <h2>Frame Pipeline</h2>
+        <p>Frames pass through stateless glitch ops, optional temporal mosh, and WebGL shader passes.</p>
+        <ul>
+          <li><strong>Stateless</strong>: JPEG‑style corruption, RGB shifts, pixelation, scanlines.</li>
+          <li><strong>Temporal</strong>: motion vectors, smear/blend, frame skipping/stepping.</li>
+          <li><strong>WebGL</strong>: shader‑based distortions and post‑FX.</li>
+        </ul>
+        <p class="note">Determinism is opt‑in; turn it on when you need reproducible artifacts.</p>
+      </section>
+
+      <section>
+        <h2>Key Parameters</h2>
+        <div class="cards">
+          <div class="card"><strong>amount/quality/iterations</strong><br/>Primary corruption intensity & repeat passes.</div>
+          <div class="card"><strong>rgb/red/green/blue shift</strong><br/>Chromatic offsets for analog separation.</div>
+          <div class="card"><strong>pixelation/noise/scanlines</strong><br/>Texture grit & CRT flavor.</div>
+          <div class="card"><strong>melt/shred/scatter</strong><br/>Block drift, slice tear, stochastic spread.</div>
+          <div class="card"><strong>brightness</strong><br/>Push exposure to stress compression.</div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Temporal Mosh</h2>
+        <ul>
+          <li><strong>masterSpeed</strong>: slow down or overcrank the feed.</li>
+          <li><strong>blend/smear</strong>: streaks and trails via accumulative mixing.</li>
+          <li><strong>frameOps</strong>: drops, holds, and reverse micro‑loops.</li>
+        </ul>
+      </section>
+
+      <footer>
+        <div>ERRORHEAD — bend the timeline, not the truth.</div>
+      </footer>
+    </div>
+  </body>
+ </html>
+

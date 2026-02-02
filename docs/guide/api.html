@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERRORHEAD // API</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="grid-bg"></div>
+    <div class="wrap">
+      <header class="hdr">
+        <div class="brand">
+          <div class="led"></div>
+          <h1>ERRORHEAD <span class="sub">// api</span></h1>
+        </div>
+        <nav class="nav">
+          <a class="nav-link" href="index.html">Overview</a>
+          <a class="nav-link" href="engine.html">Engine</a>
+          <a class="nav-link" href="audio.html">Audio</a>
+          <a class="nav-link" href="export.html">Export</a>
+          <a class="nav-link" href="recipes.html">Recipes</a>
+          <a class="nav-link active" href="api.html">API</a>
+          <span class="spacer"></span>
+          <a class="btn" href="../">← Studio</a>
+          <a class="btn" href="https://github.com/eg0pr0xy/errorhead">GitHub</a>
+        </nav>
+      </header>
+
+      <section>
+        <h2>Modules</h2>
+        <ul>
+          <li><strong>frame_pipeline/pipeline</strong> — renderGlitch, resetGlitchState</li>
+          <li><strong>media_loader/mediaLoader</strong> — loadImageTo, loadVideoTo</li>
+          <li><strong>export/exportService</strong> — exportCanvasImage, startCanvasRecording, stopCanvasRecording</li>
+          <li><strong>services/audioService</strong> — resume, connectMic, connectMedia</li>
+          <li><strong>services/glitchEngine/*</strong> — core effects, temporal, webgl passes</li>
+          <li><strong>constants.ts</strong> — DEFAULT_PARAMS</li>
+          <li><strong>types.ts</strong> — GlitchParams, AnimationState</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Usage Sketch</h2>
+        <pre>
+import { renderGlitch } from './frame_pipeline/pipeline'
+// feed canvas context + params on each tick
+renderGlitch(ctx, imageOrVideo, params)
+        </pre>
+        <p class="note">The studio provides a UI over these building blocks.
+        Integrate the modules to embed ERRORHEAD‑style glitching in your own apps.</p>
+      </section>
+
+      <footer>
+        <div>ERRORHEAD — minimal surface, deep internals.</div>
+      </footer>
+    </div>
+  </body>
+ </html>
+
