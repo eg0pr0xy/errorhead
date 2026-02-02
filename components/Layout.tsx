@@ -1,4 +1,4 @@
-
+﻿
 import React from 'react';
 
 export const Layout: React.FC<{ 
@@ -25,10 +25,11 @@ export const Layout: React.FC<{
             ERRORHEAD <span className="text-zinc-600 text-xs align-top opacity-70">v2.0</span>
           </h1>
         </div>
-        <div className="text-xs font-mono text-zinc-600 flex gap-6">
+        <div className="text-xs font-mono text-zinc-600 flex gap-6 items-center">
           <span>ENTROPY: ACTIVE</span>
           <span>MEM: 64MB</span>
-          <span className="text-cyan-800">● SIGNAL OK</span>
+          <a className="px-2 py-1 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white" href="https://eg0pr0xy.github.io/errorhead/guide/" target="_blank" rel="noreferrer" title="Open Docs">DOCS</a>
+          <span className="text-cyan-800">— SIGNAL OK</span>
         </div>
       </header>
 
@@ -57,3 +58,4 @@ export const Layout: React.FC<{
     </div>
   );
 };
+

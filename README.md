@@ -1,4 +1,4 @@
-```
+﻿```
 :: ERRORHEAD :: entropy engine
 ```
 
@@ -15,8 +15,12 @@ Quickstart
 
 Usage
 - Open the live URL
-- Drop media → bend entropy → export
+- Drop media â†’ bend entropy â†’ export
 
 Signals
 - No cloud, no trackers, no keys
 - Contributions are welcome
+
+Docs
+- Read: https://eg0pr0xy.github.io/errorhead/guide/
+

@@ -33,6 +33,11 @@ jobs:
           mkdir -p docs
           cp -R dist/* docs/
 
+      - name: Add documentation site
+        run: |
+          mkdir -p docs/guide
+          cp -R docs_site/* docs/guide/
+
       - name: Commit docs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
