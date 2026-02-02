@@ -1,0 +1,35 @@
+name: Media Import Lock
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify-shared-entry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify single shared media entry contract
+        run: |
+          set -euo pipefail
+          echo "Checking App.tsx for single handler and calls"
+          grep -E -n "const\s+handleFileSelect\s*=\s*\(file:\s*File\)" App.tsx
+          grep -E -n "file\.type\.startsWith\('video/'\)" App.tsx
+          grep -E -n "loadVideoTo\(videoRef\.current,\s*canvasRef\.current,\s*file,\s*lastObjectUrlRef\)" App.tsx
+          grep -E -n "loadImageTo\(imgRef\.current,\s*canvasRef\.current,\s*file,\s*lastObjectUrlRef\)" App.tsx
+
+          echo "Checking hidden source elements"
+          grep -E -n "<img\s+ref=\{imgRef\}" App.tsx
+          grep -E -n "<video\s+ref=\{videoRef\}" App.tsx
+
+          echo "Checking loaders for original ready hooks"
+          grep -E -n "img\.onload\s*=\s*" media_loader/mediaLoader.ts
+          grep -E -n "video\.onloadedmetadata\s*=\s*" media_loader/mediaLoader.ts
+
+      - name: Verify file input routes into handler
+        run: |
+          set -euo pipefail
+          grep -E -n "onChange=\{\(e\)\s*=>\s*\{[\s\S]*onFileSelect\(f\)" components/Panels/FilePanel.tsx
+

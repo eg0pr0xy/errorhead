@@ -1,0 +1,4 @@
+# Protect the shared media entry paths (review required before changes)
+media_loader/mediaLoader.ts  @eg0pr0xy
+App.tsx                      @eg0pr0xy
+components/Panels/FilePanel.tsx  @eg0pr0xy
