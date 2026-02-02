@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERRORHEAD // Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root { --bg:#050505; --fg:#e4e4e7; --muted:#a1a1aa; --line:#27272a; --cyan:#06b6d4; --accent:#22d3ee; }
+      * { box-sizing: border-box }
+      html,body { margin:0; padding:0; background:var(--bg); color:var(--fg); font-family:'JetBrains Mono', monospace; }
+      a { color: var(--accent); text-decoration: none }
+      a:hover { text-decoration: underline }
+      .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 20px 64px }
+      .grid-bg { position: fixed; inset: 0; pointer-events: none; opacity: .08; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 40px 40px }
+      .hdr { display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:rgba(0,0,0,.7); backdrop-filter: blur(4px); padding:12px 0; border-bottom:1px solid var(--line); z-index:5 }
+      .brand { display:flex; gap:10px; align-items:center }
+      .led { width:10px; height:10px; background:#ef4444; box-shadow:0 0 10px #ef4444; animation: blip 1.2s infinite }
+      @keyframes blip { 0%,100%{opacity:1} 50%{opacity:.3} }
+      h1 { font-family:'Rajdhani',sans-serif; letter-spacing:.15em; font-size:22px; margin:0 }
+      .hero { padding:36px 0 8px; border-bottom:1px solid var(--line) }
+      .hero pre { margin:0; white-space:pre-wrap; line-height:1.15; color:#cbd5e1 }
+      .hero .tag { display:inline-block; margin-top:10px; padding:2px 8px; border:1px solid var(--line); color:var(--muted); font-size:12px }
+      section { padding:28px 0; border-bottom:1px dashed var(--line) }
+      h2 { font-family:'Rajdhani',sans-serif; letter-spacing:.12em; font-size:18px; margin:0 0 12px; color:#e5e7eb }
+      p { color: var(--muted); margin: 8px 0 14px }
+      ul { margin: 8px 0 8px 18px; color: var(--fg) }
+      li { margin: 6px 0 }
+      code,kbd { background:#0a0a0a; border:1px solid var(--line); padding:2px 6px; font-size:12px }
+      .cards { display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:14px }
+      .card { border:1px solid var(--line); padding:14px; background:#09090b }
+      .note { border-left:3px solid var(--cyan); padding:10px 12px; background:#0a0a0a; color:#cbd5e1 }
+      footer { color:var(--muted); font-size:12px; padding-top:24px }
+      .btn { display:inline-block; border:1px solid var(--line); padding:6px 10px; background:#0b0b0c; color:#e5e7eb }
+      .btn:hover { border-color:#3f3f46 }
+    </style>
+  </head>
+  <body>
+    <div class="grid-bg"></div>
+    <div class="wrap">
+      <header class="hdr">
+        <div class="brand">
+          <div class="led"></div>
+          <h1>ERRORHEAD <span style="opacity:.55;font-size:12px">// docs</span></h1>
+        </div>
+        <nav style="display:flex; gap:12px; align-items:center">
+          <a class="btn" href="../">← Back to Studio</a>
+          <a class="btn" href="https://github.com/eg0pr0xy/errorhead">GitHub</a>
+        </nav>
+      </header>
+
+      <div class="hero">
+        <pre>
+:: ENTROPY ENGINE :: minimal browser glitch lab
+drag media → bend entropy → export artifacts
+        </pre>
+        <span class="tag">No cloud • No trackers • Offline-first</span>
+      </div>
+
+      <section id="overview">
+        <h2>What Is ERRORHEAD?</h2>
+        <p>ERRORHEAD is a compact glitch studio powered by Canvas2D + WebGL. It bends frames, scrapes motion, and sculpts compression into artifacts you can steer.</p>
+        <div class="cards">
+          <div class="card"><strong>Inputs</strong><br/>Images, videos, microphone/music for audio-reactive flow.</div>
+          <div class="card"><strong>Engine</strong><br/>Stateless glitch ops + temporal mosh + WebGL shader passes.</div>
+          <div class="card"><strong>Outputs</strong><br/>Still frames (PNG/JPEG), recordings, or PNG sequences.</div>
+        </div>
+      </section>
+
+      <section id="functions">
+        <h2>Core Functions</h2>
+        <ul>
+          <li><strong>Import</strong>: drop an image/video or pick via the left panel.</li>
+          <li><strong>Glitch Parameters</strong>: amount, quality, iterations, RGB offsets, pixelation, noise, melt/shred/scatter, brightness, scanlines.</li>
+          <li><strong>Temporal</strong>: master speed, frame stepping, smear/blend, motion‑based artifacts.</li>
+          <li><strong>Audio</strong>: mic, video, or music input to modulate parameters.</li>
+          <li><strong>Animate</strong>: toggle animation mode; scrub timeline; set keyframes.</li>
+          <li><strong>Export</strong>: still (PNG/JPEG), recording (webm/mp4 ‘auto’), or PNG sequence.</li>
+        </ul>
+        <p class="note">Tip: Randomize to discover new textures, then lock resolution and iterate to keep the vibe consistent.</p>
+      </section>
+
+      <section id="workflow">
+        <h2>Workflow</h2>
+        <ul>
+          <li><strong>1. Load</strong> media → check canvas dims</li>
+          <li><strong>2. Dial</strong> glitch params; toggle scanlines; set temporal speed</li>
+          <li><strong>3. Perform</strong> live (enable audio) or sketch keyframes</li>
+          <li><strong>4. Export</strong> a still, a recording, or a frame sequence</li>
+        </ul>
+      </section>
+
+      <section id="use-cases">
+        <h2>Use Cases</h2>
+        <div class="cards">
+          <div class="card"><strong>Glitch Stills</strong><br/>Album art, posters, thumbnails with deliberate artifacting.</div>
+          <div class="card"><strong>Motion Sculpture</strong><br/>Temporal smear for ghost trails and compression echoes.</div>
+          <div class="card"><strong>Live Visuals</strong><br/>Audio‑reactive sets with mic/music routing.</div>
+          <div class="card"><strong>Social Clips</strong><br/>Quick exports with bold scanlines and RGB shift.</div>
+        </div>
+      </section>
+
+      <section id="signals">
+        <h2>Signals</h2>
+        <ul>
+          <li>Offline‑first. No keys. No trackers.</li>
+          <li>All processing in‑browser; nothing leaves your machine.</li>
+          <li>Works on Chromium/Firefox; WebGL recommended for performance.</li>
+        </ul>
+      </section>
+
+      <section id="contribute">
+        <h2>Contribute</h2>
+        <p>Ideas, fixes, or styles—open issues and PRs are welcome.</p>
+        <p><a href="https://github.com/eg0pr0xy/errorhead" class="btn">Contribute on GitHub</a></p>
+      </section>
+
+      <footer>
+        <div>ERRORHEAD — entropy favors the brave.</div>
+      </footer>
+    </div>
+  </body>
+</html>
+
