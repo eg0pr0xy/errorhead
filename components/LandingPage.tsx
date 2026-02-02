@@ -112,13 +112,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
             variant="primary" 
             size="md" 
             disabled={isExiting}
-            className="px-16 py-8 text-xl border-cyan-500/50 bg-black hover:border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.05)] hover:shadow-[0_0_60px_rgba(6,182,212,0.15)] transition-all duration-700 group relative overflow-hidden animate-vibrate"
+            className={`px-16 py-8 text-xl border-cyan-500/50 bg-black hover:border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.05)] hover:shadow-[0_0_60px_rgba(6,182,212,0.15)] transition-all duration-700 group relative overflow-hidden animate-vibrate btn-glitch ${isExiting ? 'btn-shred' : ''}`}
             onClick={onEnter}
           >
-            <span className="relative z-10 tracking-[0.5em] font-bold text-cyan-400 group-hover:text-black transition-colors">
+            <span className="label relative z-10 tracking-[0.5em] font-bold transition-colors" data-text={isExiting ? 'PURGING...' : 'INITIALIZE'}>
               {isExiting ? 'PURGING...' : 'INITIALIZE'}
             </span>
-            <div className="absolute inset-0 bg-cyan-400 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"></div>
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#22d3ee,#f472b6,#a3e635,#06b6d4)] bg-[length:200%_100%] animate-btn-gradient translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out opacity-70"></div>
           </Button>
 
           <div className="mt-8 flex flex-col items-center gap-2">

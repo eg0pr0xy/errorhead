@@ -1,0 +1,48 @@
+/* Button hover RGB glitch + click shred */
+.btn-glitch { position: relative; overflow: hidden; }
+.btn-glitch .label { position: relative; display: inline-block; }
+.btn-glitch .label::before,
+.btn-glitch .label::after {
+  content: attr(data-text);
+  position: absolute; inset: 0; pointer-events: none;
+  mix-blend-mode: screen; opacity: 0; transition: opacity .15s ease;
+}
+.btn-glitch:hover .label::before { color:#22d3ee; transform: translate(2px,-1px); opacity: 1; animation: btn-glitch-clip-1 .6s steps(2,end) infinite; }
+.btn-glitch:hover .label::after  { color:#f472b6; transform: translate(-2px,1px); opacity: 1; animation: btn-glitch-clip-2 .6s steps(2,end) infinite; }
+
+@keyframes btn-glitch-clip-1 {
+  0%   { clip-path: inset(0 0 80% 0); }
+  25%  { clip-path: inset(10% 0 50% 0); }
+  50%  { clip-path: inset(30% 0 30% 0); }
+  75%  { clip-path: inset(60% 0 10% 0); }
+  100% { clip-path: inset(0 0 80% 0); }
+}
+@keyframes btn-glitch-clip-2 {
+  0%   { clip-path: inset(80% 0 0 0); }
+  25%  { clip-path: inset(50% 0 10% 0); }
+  50%  { clip-path: inset(30% 0 30% 0); }
+  75%  { clip-path: inset(10% 0 60% 0); }
+  100% { clip-path: inset(80% 0 0 0); }
+}
+
+.btn-shred { filter: brightness(1.2) contrast(1.2); }
+.btn-shred .label { animation: btn-label-burst .25s ease forwards; }
+.btn-shred .label::before { opacity: 1; animation: btn-shred-left .4s ease forwards; }
+.btn-shred .label::after  { opacity: 1; animation: btn-shred-right .4s ease forwards; }
+
+@keyframes btn-label-burst {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.1); opacity: 0; }
+}
+@keyframes btn-shred-left {
+  0% { transform: translate(0,0) skewX(0deg); filter: blur(0px); }
+  100% { transform: translate(-24px,-6px) skewX(-8deg); filter: blur(2px); opacity: 0; }
+}
+@keyframes btn-shred-right {
+  0% { transform: translate(0,0) skewX(0deg); filter: blur(0px); }
+  100% { transform: translate(24px,6px) skewX(8deg); filter: blur(2px); opacity: 0; }
+}
+
+@keyframes btnGradient { 0% { background-position: 0% 50% } 100% { background-position: 200% 50% } }
+.animate-btn-gradient { animation: btnGradient 1.2s linear infinite; }
+
