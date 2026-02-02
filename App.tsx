@@ -30,6 +30,18 @@ import { GlitchParams, AnimationState } from './types';
  - Must deliver a drawable frame
  - Must use the SAME render entry point: a single CanvasImageSource variable
    (`source`) passed to the renderer.
+
+ What WILL break if changed
+ - Splitting readiness across loadeddata/canplay/timers can race and leave dims at 0,
+   preventing canvas sizing and stalling both imports.
+ - Creating media elements or loading files outside App/media_loader creates parallel
+   pipelines and breaks determinism.
+
+ Safe extension guidelines
+ - Effects/temporal stages operate on canvases only; consume frames, never load media.
+ - Audio modulation adjusts parameters only; never touches media elements.
+ - New containers/codecs should be normalized upstream so the same onload/onloadedmetadata
+   contract remains intact.
 */
 
 const App: React.FC = () => {

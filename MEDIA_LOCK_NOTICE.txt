@@ -3,6 +3,28 @@ MEDIA CORE LOCK NOTICE (READ BEFORE CHANGING ANYTHING)
 Rule Zero (Absolute)
 - Media import must never regress. Image and video import/render must always work.
 
+What the Media Core does
+- Accepts a File from the UI and determines if it is image or video.
+- Loads exactly one hidden HTML element (<img> or <video>) with an object URL.
+- Sizes the canvas to the media’s intrinsic dimensions as soon as they are known.
+- Delivers a single CanvasImageSource into the renderer; effects consume only frames.
+
+Why this must not be refactored
+- The current logic is the last known-good, cross‑browser minimal path.
+- Prior “improvements” split readiness across multiple events/timers and introduced races that prevented canvas sizing and broke BOTH image and video.
+- The single, shared entry guarantees a stable, testable contract for all downstream stages.
+
+What WILL break if you change it
+- Using loadeddata/canplay/timers to gate readiness can leave videoWidth/videoHeight at 0 → canvas never resizes → black/no frame.
+- Creating media elements in effects/services reintroduces parallel pipelines → non‑deterministic state and hard‑to‑debug stalls.
+- Loading files outside the core leaks object URLs and bypasses sizing guarantees.
+
+How to extend the system safely
+- New effects or temporal stages: read/draw pixels from the provided canvases only. Never create <img>/<video>; never load files.
+- New audio modulation: adjust GlitchParams only (via audioService). Do not touch media elements.
+- New media types/containers: normalize upstream (e.g., ensure a browser‑decodable codec) while keeping the same onload/onloadedmetadata contract.
+- If you absolutely must change readiness or the entry contract: open a “MEDIA CORE CHANGE REQUEST”, provide a minimal repro, cross‑browser validation, and update the CI lock in the same PR.
+
 Single, Shared Entry Path (DO NOT SPLIT)
 - One handler: App.tsx:148 (handleFileSelect)
 - One type check: App.tsx:179 (file.type.startsWith('video/'))
@@ -40,4 +62,3 @@ Change Protocol
 - Open "MEDIA CORE CHANGE REQUEST" and include: exact problem, repro, why current onload/onloadedmetadata is insufficient, and a no‑regression plan. Update CI lock accordingly.
 
 This file is a hard stop: if your change touches any of the items above, stop and follow the Change Protocol.
-

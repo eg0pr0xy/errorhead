@@ -12,6 +12,15 @@ import React, { MutableRefObject } from 'react';
  * - Video: dynamic frame source; width/height known after onloadedmetadata; frames update per animation frame.
  * - Both: must deliver a drawable frame via the SAME render entry point (CanvasImageSource).
  *
+ * What WILL break if changed
+ * - Replacing onload/onloadedmetadata with multi‑event aggregations (loadeddata/canplay/timers)
+ *   can race dimension readiness and leave widths/heights at 0 → canvas never resizes.
+ *
+ * How to extend safely
+ * - Keep this logic minimal and aligned to readiness events above.
+ * - Do not create media elements here beyond the provided refs; do not load files elsewhere.
+ * - If a new format requires changes, preserve the single, shared entry and the readiness contract.
+ *
  * RULES (DO NOT REFACTOR CASUALLY):
  * - Image uses onload + naturalWidth/naturalHeight. Size canvas there.
  * - Video uses onloadedmetadata + videoWidth/videoHeight. Size canvas there.
