@@ -141,6 +141,10 @@ const App: React.FC = () => {
           }
       }
   };
+// MEDIA ENTRY — KNOWN-GOOD SHARED PATH (DO NOT SPLIT)
+// One handler → one type check → one CanvasImageSource fed to renderer.
+// Do not refactor casually. Past changes that fanned out into multiple
+// event paths broke dimension readiness and stalled both imports.
 const handleFileSelect = (file: File) => {
     console.log('[Import] handleFileSelect:', file.name, file.type);
     console.log('[Import] Media refs:', {
@@ -590,7 +594,9 @@ return (
       )}
 
 
-      {/* Hidden Source Elements */}
+      {/* Hidden Source Elements — REQUIRED for the shared media contract.
+          The renderer reads from these refs as a single CanvasImageSource.
+          Do not remove or create parallel sources. */}
       <div className="hidden">
         <img ref={imgRef} crossOrigin="anonymous" alt="source" />
         <video ref={videoRef} crossOrigin="anonymous" loop muted playsInline />

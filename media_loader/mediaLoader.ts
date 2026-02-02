@@ -1,5 +1,24 @@
 import React, { MutableRefObject } from 'react';
 
+/*
+ * MEDIA IMPORT — KNOWN-GOOD SHARED ENTRY (DO NOT SPLIT)
+ * -----------------------------------------------------
+ * This module is the single, shared entry for loading external media.
+ * It intentionally keeps two minimal loaders that both end in the SAME
+ * render contract for the renderer: a sized canvas + a ready HTML element.
+ *
+ * RULES (DO NOT REFACTOR CASUALLY):
+ * - Image uses onload + naturalWidth/naturalHeight. Size canvas there.
+ * - Video uses onloadedmetadata + videoWidth/videoHeight. Size canvas there.
+ * - Both return a resolved Promise only after dimensions are known.
+ * - URL lifecycle is managed via revokeUrl(lastUrlRef) to avoid leaks.
+ *
+ * WHY NOT SPLIT/ABSTRACT:
+ * - Prior attempts to “improve” by adding multi-event flows (loadeddata/canplay)
+ *   and extra guards introduced race conditions where dimensions were never
+ *   observed, breaking BOTH image and video import. Keep this logic minimal.
+ */
+
 export interface MediaLoadResult {
   url: string;
   width: number;
@@ -42,6 +61,9 @@ export function loadImageTo(img: HTMLImageElement, canvas: HTMLCanvasElement | n
 }
 
 export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement | null, file: File, lastUrlRef: React.MutableRefObject<string | null>): Promise<MediaLoadResult> {
+  // NOTE: onloadedmetadata is the earliest reliable point where
+  // videoWidth/videoHeight are populated across browsers. Do not replace
+  // with multi-event finish logic unless you prove dimension readiness.
   revokeUrl(lastUrlRef);
   const url = URL.createObjectURL(file);
   lastUrlRef.current = url;
