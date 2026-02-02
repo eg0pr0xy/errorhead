@@ -152,6 +152,25 @@ input[type=range]::-webkit-slider-runnable-track {
   100% { clip-path: inset(70% 0 0 0); transform: translate(0, 0); }
 }
 
+/* Vibrate button */
+@keyframes vibrate {
+  0% { transform: translate(0,0) rotate(0); }
+  10% { transform: translate(-1px, 1px) rotate(0.2deg); }
+  20% { transform: translate(1px, -1px) rotate(-0.2deg); }
+  30% { transform: translate(1px, 1px) rotate(0.1deg); }
+  40% { transform: translate(-1px, -1px) rotate(-0.1deg); }
+  50% { transform: translate(0.5px, -0.5px) rotate(0.15deg); }
+  60% { transform: translate(-0.5px, 0.5px) rotate(-0.15deg); }
+  70% { transform: translate(1px, 0) rotate(0.1deg); }
+  80% { transform: translate(-1px, 0) rotate(-0.1deg); }
+  90% { transform: translate(0, 1px) rotate(0.05deg); }
+  100% { transform: translate(0,0) rotate(0); }
+}
+.animate-vibrate {
+  animation: vibrate 0.25s infinite steps(8, end);
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .glitch, .glitch::before, .glitch::after { animation: none !important; }
+  .glitch, .glitch::before, .glitch::after, .animate-vibrate { animation: none !important; }
 }

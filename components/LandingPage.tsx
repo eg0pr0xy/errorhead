@@ -11,6 +11,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
   const [dots, setDots] = useState<{x: number, y: number, s: number, d: number}[]>([]);
   const [videoOk, setVideoOk] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const paletteRef = useRef<string[]>([
+    '#22d3ee', '#f472b6', '#a3e635', '#f59e0b', '#ef4444', '#8b5cf6', '#10b981', '#eab308'
+  ]);
+  const [headColors, setHeadColors] = useState<string[]>(['#22d3ee','#22d3ee','#22d3ee','#22d3ee']);
 
   // Generate a "Starfield" of data points
   useEffect(() => {
@@ -22,6 +26,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
     }));
     setDots(newDots);
   }, []);
+
+  // Rapid color cycle for letters H E A D
+  useEffect(() => {
+    if (isExiting) return;
+    const id = window.setInterval(() => {
+      const p = paletteRef.current;
+      setHeadColors(prev => prev.map(() => p[Math.floor(Math.random() * p.length)]));
+    }, 140);
+    return () => { window.clearInterval(id); };
+  }, [isExiting]);
 
   return (
     <div className={`fixed inset-0 z-[100] w-screen h-screen overflow-hidden bg-[#050505] flex items-center justify-center font-mono select-none transition-opacity duration-300 ${isExiting ? 'animate-exit-purge' : ''}`}>
@@ -76,7 +90,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
                className="text-8xl md:text-[10rem] font-display font-black tracking-[0.2em] text-white relative leading-none glitch"
                data-text="ERRORHEAD"
              >
-               <span>ERROR</span><span className="text-cyan-500">HEAD</span>
+               <span>ERROR</span>
+               <span className="inline-block">
+                 <span style={{ color: headColors[0] }}>H</span>
+                 <span style={{ color: headColors[1] }}>E</span>
+                 <span style={{ color: headColors[2] }}>A</span>
+                 <span style={{ color: headColors[3] }}>D</span>
+               </span>
              </h1>
           </div>
           <p className="text-zinc-600 text-sm md:text-base tracking-[0.6em] uppercase font-light">
@@ -92,7 +112,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
             variant="primary" 
             size="md" 
             disabled={isExiting}
-            className="px-16 py-8 text-xl border-cyan-500/50 bg-black hover:border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.05)] hover:shadow-[0_0_60px_rgba(6,182,212,0.15)] transition-all duration-700 group relative overflow-hidden"
+            className="px-16 py-8 text-xl border-cyan-500/50 bg-black hover:border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.05)] hover:shadow-[0_0_60px_rgba(6,182,212,0.15)] transition-all duration-700 group relative overflow-hidden animate-vibrate"
             onClick={onEnter}
           >
             <span className="relative z-10 tracking-[0.5em] font-bold text-cyan-400 group-hover:text-black transition-colors">
