@@ -1,0 +1,575 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Layout } from './components/Layout';
+import { FilePanel } from './components/Panels/FilePanel';
+import { ControlPanel } from './components/Panels/ControlPanel';
+import { PreviewCanvas } from './components/Canvas/PreviewCanvas';
+import { Timeline } from './components/Timeline';
+import { LandingPage } from './components/LandingPage';
+import { renderGlitch, resetGlitchState } from './services/glitchService';
+import { getImageDims, getVideoDims } from './services/mediaUtils';
+import { audioService } from './services/audioService';
+import { DEFAULT_PARAMS } from './constants';
+import { GlitchParams, AnimationState } from './types';
+
+const App: React.FC = () => {
+  // --- STATE ---
+  const [isLanding, setIsLanding] = useState(true);
+  const [isExiting, setIsExiting] = useState(false);
+  
+  const [params, setParams] = useState<GlitchParams>(DEFAULT_PARAMS);
+  const [liveMode, setLiveMode] = useState(true);
+  const [activePresetId, setActivePresetId] = useState<string>('default');
+  const [logs, setLogs] = useState<string[]>([]);
+  
+  const [animationMode, setAnimationMode] = useState(false);
+  const [animState, setAnimState] = useState<AnimationState>({
+    isPlaying: false,
+    currentTime: 0,
+    duration: 5,
+    keyframes: [],
+    fps: 30
+  });
+
+  const [sourceType, setSourceType] = useState<'image' | 'video' | null>(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [fileName, setFileName] = useState<string>('');
+  const [exportFormat, setExportFormat] = useState<'png' | 'jpeg'>('png');
+  const [exportQuality, setExportQuality] = useState<number>(90);
+  const [isRecording, setIsRecording] = useState(false);
+  const [fps, setFps] = useState(0);
+  const lastObjectUrlRef = useRef<string | null>(null);
+
+  // Audio Music Ref
+  const musicRef = useRef<HTMLAudioElement>(new Audio());
+
+  // Refs for Render Loop
+  const paramsRef = useRef(params);
+  const animStateRef = useRef(animState);
+  const liveModeRef = useRef(liveMode);
+  const sourceTypeRef = useRef(sourceType);
+  const isVideoPlayingRef = useRef(isVideoPlaying);
+  const animationModeRef = useRef(animationMode);
+  
+  const tGlobalRef = useRef(0);
+  const lastTimeRef = useRef<number>(0);
+  const frameCountRef = useRef(0);
+  const lastFpsTimeRef = useRef(0);
+  const isRenderingRef = useRef(false);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const requestRef = useRef<number>(0);
+
+  // Recording Refs
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordStreamRef = useRef<MediaStream | null>(null);
+  const recordTimerRef = useRef<number | null>(null);
+
+  // Toast UI
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 3000);
+  };
+
+  // Sync Refs
+  useEffect(() => { paramsRef.current = params; }, [params]);
+  useEffect(() => { animStateRef.current = animState; }, [animState]);
+  useEffect(() => { liveModeRef.current = liveMode; }, [liveMode]);
+  useEffect(() => { sourceTypeRef.current = sourceType; }, [sourceType]);
+  useEffect(() => { isVideoPlayingRef.current = isVideoPlaying; }, [isVideoPlaying]);
+  useEffect(() => { animationModeRef.current = animationMode; }, [animationMode]);
+
+  // Audio Logic: Dynamic Routing
+  useEffect(() => {
+    if (params.audioEnabled) {
+      if (params.audioSource === 'mic') {
+        audioService.connectMic().then(() => addLog('Audio: Mic Online'));
+      } else if (params.audioSource === 'video' && videoRef.current) {
+        audioService.connectMedia(videoRef.current);
+        addLog('Audio: Tapped Video Stream');
+      } else if (params.audioSource === 'music' && params.musicUrl) {
+        musicRef.current.src = params.musicUrl;
+        musicRef.current.play();
+        audioService.connectMedia(musicRef.current);
+        addLog('Audio: Music Stream Active');
+      }
+    } else {
+      audioService.stop();
+      musicRef.current.pause();
+    }
+  }, [params.audioEnabled, params.audioSource, params.musicUrl]);
+
+  const addLog = (msg: string) => {
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setLogs(prev => [`[${time}] ${msg}`, ...prev].slice(0, 5));
+  };
+
+  const hardReset = () => {
+      tGlobalRef.current = 0;
+      resetGlitchState();
+      if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+          if (sourceTypeRef.current === 'video') {
+             videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+          }
+      }
+  };
+
+  const handleFileSelect = (file: File) => {
+    // Revoke previous object URL if any to avoid leaks
+    if (lastObjectUrlRef.current) {
+      try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch {}
+      lastObjectUrlRef.current = null;
+    }
+    const url = URL.createObjectURL(file);
+    lastObjectUrlRef.current = url;
+    setFileName(file.name);
+    hardReset();
+
+    if (file.type.startsWith('video/')) {
+      setSourceType('video');
+      if (videoRef.current) {
+        videoRef.current.src = url;
+        videoRef.current.load();
+        // Ensure canvas matches video dimensions as soon as metadata is available
+        videoRef.current.onloadedmetadata = () => {
+          if (canvasRef.current && videoRef.current) {
+            const vw = videoRef.current.videoWidth;
+            const vh = videoRef.current.videoHeight;
+            if (vw > 0 && vh > 0) {
+              canvasRef.current.width = vw;
+              canvasRef.current.height = vh;
+            }
+          }
+        };
+        videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => addLog('Play manually'));
+        if (paramsRef.current.audioEnabled && paramsRef.current.audioSource === 'video') {
+           audioService.connectMedia(videoRef.current);
+        }
+      }
+    } else {
+      setSourceType('image');
+      if (imgRef.current) {
+        imgRef.current.src = url;
+        // Bug origin: previously used img.width/height while the <img> lives in a hidden container.
+        // Hidden images report layout widths as 0, causing the render loop to skip drawing (black frames).
+        // Fix: use naturalWidth/naturalHeight and size the canvas accordingly once the image is decoded.
+        imgRef.current.onload = () => {
+          if (canvasRef.current && imgRef.current) {
+            const iw = (imgRef.current as HTMLImageElement).naturalWidth || imgRef.current.width;
+            const ih = (imgRef.current as HTMLImageElement).naturalHeight || imgRef.current.height;
+            if (iw > 0 && ih > 0) {
+              canvasRef.current.width = iw;
+              canvasRef.current.height = ih;
+            }
+          }
+        };
+      }
+    }
+    addLog(`Loaded ${file.name}`);
+  };
+
+  const handleImportMusic = (file: File) => {
+     const url = URL.createObjectURL(file);
+     setParams(p => ({ ...p, musicUrl: url, audioSource: 'music', audioEnabled: true }));
+     addLog(`Imported Audio: ${file.name}`);
+  };
+
+  const handleParamChange = (newParams: GlitchParams) => {
+    setParams(newParams);
+    if (activePresetId !== 'custom') setActivePresetId('custom');
+  };
+
+  // --- RANDOMIZE / KEYFRAMES ---
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+  const rnd = (min: number, max: number, step = 1) => Math.round((Math.random() * (max - min) + min) / step) * step;
+  const randomizeParams = (p: GlitchParams): GlitchParams => {
+    return {
+      ...p,
+      amount: rnd(0, 60),
+      quality: rnd(30, 100),
+      iterations: rnd(1, 20),
+      rgbShift: rnd(0, 25),
+      redShift: rnd(-10, 10),
+      greenShift: rnd(-10, 10),
+      blueShift: rnd(-10, 10),
+      pixelation: rnd(0, 6),
+      noise: rnd(0, 40),
+      melt: rnd(0, 40),
+      shred: rnd(0, 50),
+      scatter: rnd(0, 50),
+      brightness: clamp(rnd(90, 120), 50, 200),
+      scanlines: Math.random() < 0.4 ? !p.scanlines : p.scanlines,
+      scanlineIntensity: rnd(10, 80),
+
+      // Temporal & mosh
+      masterSpeed: Math.random() < 0.5 ? p.masterSpeed : Math.round((Math.random() * 2 + 0.3) * 10) / 10,
+      moshEnabled: Math.random() < 0.5 ? true : p.moshEnabled,
+      moshMode: Math.random() < 0.5 ? 'webgl' : '2d',
+      feedback: rnd(60, 98),
+      moshWarp: rnd(0, 60),
+      moshDiffusion: rnd(0, 3),
+      blockList: rnd(0, 80),
+      blockSize: rnd(16, 48, 2),
+
+      // Displacement
+      moshDispStrength: rnd(0, 60),
+      moshDispScale: rnd(5, 30),
+      moshDispSpeed: rnd(5, 30),
+      moshDispQuantize: rnd(0, 80),
+
+      // Keep audio config unchanged to avoid surprise prompts
+      audioEnabled: p.audioEnabled,
+      audioSource: p.audioSource,
+      audioGain: p.audioGain,
+      audioGate: p.audioGate,
+      audioTargetRgb: p.audioTargetRgb,
+      audioTargetAmount: p.audioTargetAmount,
+      audioTargetWarp: p.audioTargetWarp,
+      musicUrl: p.musicUrl,
+    };
+  };
+
+  const handleRandomize = () => {
+    setParams(prev => randomizeParams(prev));
+    setActivePresetId('custom');
+    addLog('Randomized parameters');
+  };
+
+  const handleAddKeyframe = () => {
+    const id = crypto.randomUUID();
+    const kf = { id, time: animStateRef.current.currentTime, params: paramsRef.current };
+    setAnimState(prev => ({ ...prev, keyframes: [...prev.keyframes, kf].sort((a, b) => a.time - b.time) }));
+    addLog(`Added keyframe @ ${animStateRef.current.currentTime.toFixed(2)}s`);
+  };
+
+  const handleDeleteKeyframe = (id: string) => {
+    setAnimState(prev => ({ ...prev, keyframes: prev.keyframes.filter(k => k.id !== id) }));
+    addLog('Deleted keyframe');
+  };
+
+  const renderFrame = async (timestamp: number) => {
+    if (!canvasRef.current || isRenderingRef.current) return;
+    
+    try {
+      isRenderingRef.current = true;
+      const ctx = canvasRef.current.getContext('2d', { alpha: false });
+      if (!ctx) return;
+
+      const now = timestamp / 1000;
+      const delta = now - (lastTimeRef.current || now);
+      lastTimeRef.current = now;
+
+      const safeDelta = Math.min(delta, 0.1); 
+      tGlobalRef.current += safeDelta * paramsRef.current.masterSpeed;
+
+      if (animationModeRef.current && animStateRef.current.isPlaying) {
+         let nextTime = animStateRef.current.currentTime + safeDelta;
+         if (nextTime > animStateRef.current.duration) nextTime = 0;
+         setAnimState(prev => ({ ...prev, currentTime: nextTime }));
+      }
+
+      let source: CanvasImageSource | null = null;
+      let width = 0;
+      let height = 0;
+
+      if (sourceTypeRef.current === 'image' && imgRef.current) {
+        const imgEl = imgRef.current as HTMLImageElement;
+        source = imgEl;
+        const { w, h } = getImageDims(imgEl);
+        width = w; height = h;
+        // Ensure canvas matches image size
+        if (canvasRef.current && width > 0 && (canvasRef.current.width !== width || canvasRef.current.height !== height)) {
+          canvasRef.current.width = width;
+          canvasRef.current.height = height;
+        }
+      } else if (sourceTypeRef.current === 'video' && videoRef.current) {
+        const v = videoRef.current;
+        source = v;
+        const vd = getVideoDims(v);
+        width = vd.w; height = vd.h;
+        if (vd.ready && width > 0 && height > 0) {
+          if ((canvasRef.current!.width !== width) || (canvasRef.current!.height !== height)) {
+            canvasRef.current!.width = width;
+            canvasRef.current!.height = height;
+          }
+        }
+      }
+
+      if (source && width > 0 && height > 0) {
+         const audioLevel = audioService.getLevel();
+         await renderGlitch(ctx, source, paramsRef.current, width, height, tGlobalRef.current, audioLevel);
+      }
+    } finally {
+      isRenderingRef.current = false;
+    }
+  };
+
+  const animate = (timestamp: number) => {
+    if (lastFpsTimeRef.current === 0) lastFpsTimeRef.current = timestamp;
+    const elapsed = timestamp - lastFpsTimeRef.current;
+    frameCountRef.current++;
+    if (elapsed >= 1000) {
+        setFps(Math.round((frameCountRef.current * 1000) / elapsed));
+        frameCountRef.current = 0;
+        lastFpsTimeRef.current = timestamp;
+    }
+
+    // Only render the main app frames if we've initialized (not landing) or are currently purging
+    const isAppActive = !isLanding || isExiting;
+    const shouldRender = isAppActive && (liveModeRef.current || 
+                        (sourceTypeRef.current === 'video' && isVideoPlayingRef.current) || 
+                        (animationModeRef.current && animStateRef.current.isPlaying));
+
+    if (shouldRender) renderFrame(timestamp);
+    requestRef.current = requestAnimationFrame(animate);
+  };
+
+  useEffect(() => {
+    requestRef.current = requestAnimationFrame(animate);
+    return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
+  }, []); // Run loop always, gating is inside 'animate'
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (lastObjectUrlRef.current) {
+        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch {}
+        lastObjectUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  const startEnterTransition = () => {
+    setIsExiting(true);
+    // Match this duration to the CSS animation length (0.8s)
+    setTimeout(() => {
+      setIsLanding(false);
+      setIsExiting(false);
+      addLog("System Online");
+    }, 800);
+  };
+
+  // ---------- EXPORT HELPERS ----------
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportImage = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ext = exportFormat === 'jpeg' ? 'jpg' : 'png';
+    const mime = exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
+    const quality = exportFormat === 'jpeg' ? Math.max(0.1, Math.min(1, exportQuality / 100)) : undefined;
+    await new Promise<void>((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) return resolve();
+        const base = fileName ? fileName.replace(/\.[^/.]+$/, '') : 'errorhead_frame';
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        const out = `${base}_${ts}.${ext}`;
+        downloadBlob(blob, out);
+        showToast(`Saved ${out}`);
+        resolve();
+      }, mime, quality as any);
+    });
+  };
+
+  const stopRecording = () => {
+    if (!recorderRef.current) return;
+    try { recorderRef.current.stop(); } catch {}
+    if (recordTimerRef.current) {
+      clearTimeout(recordTimerRef.current as any);
+      recordTimerRef.current = null;
+    }
+  };
+
+  const startRecording = async (durationSec?: number) => {
+    if (!canvasRef.current) return;
+    if (isRecording) { stopRecording(); return; }
+
+    const desiredFps = 30;
+    const canvasStream = canvasRef.current.captureStream(desiredFps);
+
+    // Optionally merge audio based on params
+    let mixedStream: MediaStream;
+    if (paramsRef.current.audioEnabled) {
+      const audioStream = audioService.getMixedStream();
+      const audioTracks = audioStream.getAudioTracks();
+      mixedStream = new MediaStream([
+        ...canvasStream.getVideoTracks(),
+        ...audioTracks
+      ]);
+    } else {
+      mixedStream = new MediaStream([...canvasStream.getVideoTracks()]);
+    }
+
+    recordStreamRef.current = mixedStream;
+    recordChunksRef.current = [];
+
+    const mimeCandidates = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm'
+    ];
+    const mimeType = mimeCandidates.find(t => (window as any).MediaRecorder && (window as any).MediaRecorder.isTypeSupported && (window as any).MediaRecorder.isTypeSupported(t)) || 'video/webm';
+    if (!(window as any).MediaRecorder) {
+      alert('MediaRecorder is not supported in this browser.');
+      return;
+    }
+
+    const rec = new MediaRecorder(mixedStream, { mimeType });
+    recorderRef.current = rec;
+
+    rec.ondataavailable = (ev: BlobEvent) => {
+      if (ev.data && ev.data.size > 0) recordChunksRef.current.push(ev.data);
+    };
+    rec.onstop = () => {
+      setIsRecording(false);
+      const blob = new Blob(recordChunksRef.current, { type: mimeType });
+      const base = fileName ? fileName.replace(/\.[^/.]+$/, '') : 'errorhead_recording';
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const out = `${base}_${ts}.webm`;
+      downloadBlob(blob, out);
+      showToast(`Saved ${out}`);
+
+      // Cleanup
+      recordStreamRef.current?.getTracks().forEach(t => t.stop());
+      recordStreamRef.current = null;
+      recorderRef.current = null;
+      recordChunksRef.current = [];
+    };
+
+    try {
+      rec.start(250); // gather chunks every 250ms
+      setIsRecording(true);
+      if (durationSec && durationSec > 0) {
+        recordTimerRef.current = window.setTimeout(() => {
+          stopRecording();
+        }, durationSec * 1000) as any;
+      }
+    } catch (e) {
+      console.error('Failed to start recording', e);
+      setIsRecording(false);
+      recordStreamRef.current?.getTracks().forEach(t => t.stop());
+      recordStreamRef.current = null;
+      recorderRef.current = null;
+    }
+  };
+
+  const handleExport = (isVideo: boolean, durationSec?: number) => {
+    if (isVideo) {
+      startRecording(durationSec);
+    } else {
+      exportImage();
+    }
+  };
+
+  return (
+    <>
+      {/* Landing Page Overlay */}
+      {isLanding && (
+        <LandingPage onEnter={startEnterTransition} isExiting={isExiting} />
+      )}
+
+      {/* Hidden Source Elements */}
+      <div className="hidden">
+        <img ref={imgRef} crossOrigin="anonymous" alt="source" />
+        <video ref={videoRef} crossOrigin="anonymous" loop muted playsInline />
+      </div>
+
+      {/* Main Studio Layout */}
+      <div className={`transition-all duration-1000 ${isLanding && !isExiting ? 'blur-2xl opacity-0 scale-105 pointer-events-none' : 'blur-0 opacity-100 scale-100'}`}>
+        <Layout
+          leftPanel={
+            <FilePanel 
+              onFileSelect={handleFileSelect} 
+              onPresetSelect={(p) => { setParams(p.params); setActivePresetId(p.id); }}
+              activePresetId={activePresetId}
+              exportFormat={exportFormat}
+              setExportFormat={setExportFormat}
+              exportQuality={exportQuality}
+              setExportQuality={setExportQuality}
+              onExport={handleExport}
+              isVideo={sourceType === 'video'}
+              isAnimationActive={animationMode}
+              currentParams={params}
+              onImportPreset={(p) => setParams(p)}
+              onSharePreset={() => {}}
+              isRecording={isRecording}
+            />
+          }
+          centerPanel={
+          <PreviewCanvas 
+            canvasRef={canvasRef}
+            isProcessing={false} 
+            live={liveMode}
+            toggleLive={() => setLiveMode(!liveMode)}
+            hasSource={!!sourceType}
+            isVideo={sourceType === 'video'}
+            togglePlayback={() => {
+                if (videoRef.current?.paused) videoRef.current.play(); else videoRef.current?.pause();
+                setIsVideoPlaying(!videoRef.current?.paused);
+            }}
+            onStop={() => { videoRef.current!.currentTime = 0; videoRef.current!.pause(); setIsVideoPlaying(false); }}
+            isPlaying={isVideoPlaying}
+            isRecording={isRecording}
+          />
+        }
+          rightPanel={
+            <ControlPanel 
+              params={params} 
+              onChange={handleParamChange} 
+              onRandomize={handleRandomize}
+              onReset={hardReset}
+              onImportMusic={handleImportMusic}
+            />
+          }
+          bottomBar={
+            <Timeline 
+              animation={animState}
+              isActive={animationMode}
+              onToggleActive={() => setAnimationMode(!animationMode)}
+              onPlayPause={() => setAnimState(p => ({...p, isPlaying: !p.isPlaying}))}
+              onSeek={(t) => setAnimState(p => ({...p, currentTime: t}))}
+              onAddKeyframe={handleAddKeyframe}
+              onDeleteKeyframe={handleDeleteKeyframe}
+              onDurationChange={(d) => setAnimState(p => ({...p, duration: d}))}
+              fps={fps}
+            />
+          }
+        />
+      </div>
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-[200]">
+          <div className="bg-zinc-900/90 border border-zinc-700 text-zinc-200 px-3 py-2 text-xs font-mono shadow-lg">
+            {toast}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default App;
+
+

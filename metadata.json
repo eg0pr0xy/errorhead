@@ -1,0 +1,7 @@
+{
+  "name": "ERRORHEAD",
+  "description": "A media-art themed, professional browser-based glitch art studio using advanced JPEG corruption and visual processing techniques.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
