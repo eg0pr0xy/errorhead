@@ -594,7 +594,7 @@ return (
       {/* Hidden Source Elements */}
       <div className="hidden">
         <img ref={imgRef} crossOrigin="anonymous" alt="source" />
-        <video ref={videoRef} crossOrigin="anonymous" loop muted playsInline />
+        <video ref={videoRef} crossOrigin="anonymous" loop muted playsInline preload="metadata" />
       </div>
 
       {/* Main Studio Layout */}

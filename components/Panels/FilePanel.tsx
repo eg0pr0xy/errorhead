@@ -197,7 +197,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
             type="file" 
             ref={fileInputRef} 
             className="hidden" 
-            accept="image/*,video/mp4,video/quicktime,video/webm"
+            accept="image/*,video/*"
             onChange={(e) => {
               const f = e.target.files?.[0];
               console.log('[Import] input onChange:', f?.name, f?.type);
