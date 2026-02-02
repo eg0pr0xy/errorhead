@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERRORHEAD // Audio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="grid-bg"></div>
+    <div class="wrap">
+      <header class="hdr">
+        <div class="brand">
+          <div class="led"></div>
+          <h1>ERRORHEAD <span class="sub">// audio</span></h1>
+        </div>
+        <nav class="nav">
+          <a class="nav-link" href="index.html">Overview</a>
+          <a class="nav-link" href="engine.html">Engine</a>
+          <a class="nav-link active" href="audio.html">Audio</a>
+          <a class="nav-link" href="export.html">Export</a>
+          <a class="nav-link" href="recipes.html">Recipes</a>
+          <span class="spacer"></span>
+          <a class="btn" href="../">← Studio</a>
+          <a class="btn" href="https://github.com/eg0pr0xy/errorhead">GitHub</a>
+        </nav>
+      </header>
+
+      <section>
+        <h2>Sources</h2>
+        <ul>
+          <li><strong>Mic</strong>: route live input for performance.</li>
+          <li><strong>Video</strong>: use the video’s audio track.</li>
+          <li><strong>Music</strong>: import a track for reactive control.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Routing</h2>
+        <p>Audio flows through an analyser for metering, then splits to recording and monitoring nodes.</p>
+        <ul>
+          <li><strong>Analyser</strong>: FFT/levels mapped to parameters (e.g., amount, rgbShift, melt).</li>
+          <li><strong>Recorder</strong>: mixed bus for capture alongside the canvas stream.</li>
+          <li><strong>Monitor</strong>: speakers for live feedback.</li>
+        </ul>
+        <p class="note">Some browsers require a click to resume the AudioContext. Tap anywhere if meters look frozen.</p>
+      </section>
+
+      <section>
+        <h2>Reactive Ideas</h2>
+        <div class="cards">
+          <div class="card"><strong>Kicks → melt</strong><br/>Onsets smear blocks for impact.</div>
+          <div class="card"><strong>Hats → noise</strong><br/>High‑freq energy adds grit.</div>
+          <div class="card"><strong>Bass → rgb shift</strong><br/>Low end drives chroma wobble.</div>
+        </div>
+      </section>
+
+      <footer>
+        <div>ERRORHEAD — listen to the noise.</div>
+      </footer>
+    </div>
+  </body>
+ </html>
+
