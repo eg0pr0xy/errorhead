@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from './UIComponents';
 
 interface LandingPageProps {
@@ -9,6 +9,8 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) => {
   const [dots, setDots] = useState<{x: number, y: number, s: number, d: number}[]>([]);
+  const [videoOk, setVideoOk] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Generate a "Starfield" of data points
   useEffect(() => {
@@ -25,7 +27,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
     <div className={`fixed inset-0 z-[100] w-screen h-screen overflow-hidden bg-[#050505] flex items-center justify-center font-mono select-none transition-opacity duration-300 ${isExiting ? 'animate-exit-purge' : ''}`}>
       
       {/* BACKGROUND: DATA VOID ENGINE */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0">
+        {/* Fullscreen Background Video (optional). Place file at /public/landing.mp4 */}
+        {videoOk && (
+          <video
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none"
+            src={import.meta.env.BASE_URL + 'landing.mp4'}
+            autoPlay
+            muted
+            loop
+            playsInline
+            onError={() => setVideoOk(false)}
+          />
+        )}
         {/* Animated Data Particles */}
         {dots.map((dot, i) => (
           <div 

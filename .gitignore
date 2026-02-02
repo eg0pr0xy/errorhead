@@ -26,3 +26,6 @@ dist-ssr
 # Keep docs private: ignore markdown except README
 *.md
 !README.md
+
+# Optional landing video (user-supplied)
+public/landing.*
