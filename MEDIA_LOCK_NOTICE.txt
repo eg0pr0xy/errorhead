@@ -1,0 +1,43 @@
+MEDIA CORE LOCK NOTICE (READ BEFORE CHANGING ANYTHING)
+
+Rule Zero (Absolute)
+- Media import must never regress. Image and video import/render must always work.
+
+Single, Shared Entry Path (DO NOT SPLIT)
+- One handler: App.tsx:148 (handleFileSelect)
+- One type check: App.tsx:179 (file.type.startsWith('video/'))
+- One source into renderer: App.tsx:331 (single CanvasImageSource variable)
+- Hidden sources (required): App.tsx:601 (<img ref={imgRef} />), App.tsx:602 (<video ref={videoRef} />)
+
+Media Contract (Locked)
+- Image: static frame source; width/height known after onload
+- Video: dynamic frame source; width/height known after onloadedmetadata; frames update per animation frame
+- Both: deliver a drawable frame via the SAME render entry point to the renderer
+
+Known‑Good Loaders (do not “improve”)
+- media_loader/mediaLoader.ts:35 — loadImageTo (img.onload + naturalWidth/Height)
+- media_loader/mediaLoader.ts:63 — loadVideoTo (video.onloadedmetadata + videoWidth/Height)
+- URL lifecycle via revokeUrl(lastUrlRef)
+
+Do Not Do This
+- Do NOT add multi‑event readiness (loadeddata/canplay) or finish() aggregations in loaders
+- Do NOT create <img> or <video> outside App/media_loader
+- Do NOT call URL.createObjectURL outside App/media_loader
+- Do NOT merge media logic into effects/engine/pipeline
+
+Boundaries (Where others may operate)
+- Effects/Temporal (services/glitchService.ts): operate on canvases and buffers only; consume frames; no media elements; no file loading
+- Audio modulation: only modulates parameters; no media element creation or file loading
+- Pipeline (frame_pipeline/pipeline.ts): orchestrates canvases; media import lives outside
+
+Guardrails
+- CI lock (.github/workflows/media-lock.yml):
+  - Enforces single shared entry; forbids forbidden patterns and imports
+  - Ensures renderGlitch is only called from App.tsx
+- CODEOWNERS (.github/CODEOWNERS): changes to App.tsx, media_loader/mediaLoader.ts, components/Panels/FilePanel.tsx require owner review
+
+Change Protocol
+- Open "MEDIA CORE CHANGE REQUEST" and include: exact problem, repro, why current onload/onloadedmetadata is insufficient, and a no‑regression plan. Update CI lock accordingly.
+
+This file is a hard stop: if your change touches any of the items above, stop and follow the Change Protocol.
+
