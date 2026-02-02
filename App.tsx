@@ -17,6 +17,10 @@ import { GlitchParams, AnimationState } from './types';
 /*
  Media Contract (LOCKED)
  -----------------------
+ FrameSource is a locked, read-only contract.
+ Do not refactor media import without updating this contract.
+ Effects consume frames, they do not create them.
+
  Image
  - Static frame source (HTMLImageElement)
  - Width/height known after onload

@@ -1,5 +1,9 @@
 MEDIA CORE LOCK NOTICE (READ BEFORE CHANGING ANYTHING)
 
+FrameSource is a locked, read-only contract.
+Do not refactor media import without updating this contract.
+Effects consume frames, they do not create them.
+
 Rule Zero (Absolute)
 - Media import must never regress. Image and video import/render must always work.
 
