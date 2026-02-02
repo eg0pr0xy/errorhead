@@ -72,9 +72,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
         <div className={`space-y-4 group transition-all duration-500 ${isExiting ? 'opacity-0 scale-95 blur-sm' : ''}`}>
           <div className="flex flex-col items-center">
              <div className="text-[10px] text-cyan-700 tracking-[1em] mb-2 translate-x-[0.5em] font-bold">NEUE EPISTEME PRESENTS</div>
-             <h1 className="text-8xl md:text-[10rem] font-display font-black tracking-[0.2em] text-white relative leading-none">
-               ERROR<span className="text-cyan-500">HEAD</span>
-               <span className="absolute inset-0 text-cyan-500/20 -translate-x-1 translate-y-1 opacity-0 group-hover:opacity-100 transition-opacity">ERRORHEAD</span>
+             <h1
+               className="text-8xl md:text-[10rem] font-display font-black tracking-[0.2em] text-white relative leading-none glitch"
+               data-text="ERRORHEAD"
+             >
+               <span>ERROR</span><span className="text-cyan-500">HEAD</span>
              </h1>
           </div>
           <p className="text-zinc-600 text-sm md:text-base tracking-[0.6em] uppercase font-light">
