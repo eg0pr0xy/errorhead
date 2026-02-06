@@ -159,6 +159,33 @@ export interface GlitchParams {
 
   // Compression Corruption Mode
   corruptMode?: 'safe' | 'unsafe';
+
+  // Optional strict effects layer (post-processing)
+  strictEffectsEnabled?: boolean;
+
+  // Analog Phase Slip (optional)
+  phaseEnabled?: boolean;
+  phaseOffset?: number;
+  phaseSpeed?: number;
+  phaseJitter?: number;
+  wrapMode?: 'hard' | 'soft';
+  banding?: 'line' | 'block';
+  // Horizontal Drift + Wave (Analog Sync Distortion extension)
+  hOffset?: number;
+  hSpeed?: number;
+  hAmount?: number;
+  waveAmount?: number;
+  waveFrequency?: number;
+  waveSpeed?: number;
+  wavePhase?: number;
+
+  // Vertical Sync Collapse (optional)
+  vSyncEnabled?: boolean;
+  vSyncBandCount?: number;
+  vSyncBaseSpeed?: number;
+  vSyncBandVariance?: number;
+  vSyncJitter?: number;
+  vSyncWrapMode?: 'hard' | 'soft';
 }
 
 export interface Preset {

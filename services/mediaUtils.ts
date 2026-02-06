@@ -5,6 +5,7 @@ export function getImageDims(img: HTMLImageElement): { w: number; h: number } {
 }
 
 export function getVideoDims(v: HTMLVideoElement): { ready: boolean; w: number; h: number } {
+  // KNOWN-GOOD: require current data to avoid drawing before a frame is available.
   const readyState = v.readyState;
   const ready = readyState >= (v.HAVE_CURRENT_DATA || 2);
   const w = v.videoWidth || 0;

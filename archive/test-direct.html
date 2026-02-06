@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Test</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .logs {
+            width: 80%;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #111;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Direct Test</h1>
+    <button id="testFetch">Fetch and Import Test.mp4</button>
+    <div class="logs" id="logs"></div>
+
+    <script>
+        const logsDiv = document.getElementById('logs');
+        
+        function log(msg) {
+            const p = document.createElement('p');
+            p.textContent = msg;
+            logsDiv.appendChild(p);
+            console.log(msg);
+        }
+
+        document.getElementById('testFetch').addEventListener('click', async () => {
+            log('Testing fetch /test.mp4...');
+            try {
+                const response = await fetch('/test.mp4');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                log('Response received');
+                const blob = await response.blob();
+                log(`Blob received: ${blob.type}, ${blob.size} bytes`);
+                
+                const file = new File([blob], 'test.mp4', { type: 'video/mp4' });
+                log(`File created: ${file.name}, ${file.type}, ${file.size} bytes`);
+                
+                // Dispatch event to app
+                log('Dispatching test-file-select event');
+                window.dispatchEvent(new CustomEvent('test-file-select', { detail: file }));
+                log('Event dispatched');
+            } catch (err) {
+                log(`Error: ${err.message}`);
+                console.error(err.stack);
+            }
+        });
+
+        window.addEventListener('load', () => {
+            log('Page loaded');
+        });
+    </script>
+</body>
+</html>

@@ -10,9 +10,23 @@ interface ControlPanelProps {
   onRandomize: () => void;
   onReset: () => void;
   onImportMusic: (file: File) => void;
+  onStopAudio: () => void;
+  onToggleAudioPause: () => void;
+  audioPauseLabel: string;
+  audioPauseDisabled: boolean;
 }
 
-export const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange, onRandomize, onReset, onImportMusic }) => {
+export const ControlPanel: React.FC<ControlPanelProps> = ({
+  params,
+  onChange,
+  onRandomize,
+  onReset,
+  onImportMusic,
+  onStopAudio,
+  onToggleAudioPause,
+  audioPauseLabel,
+  audioPauseDisabled
+}) => {
   const musicInputRef = useRef<HTMLInputElement>(null);
 
   const update = (key: keyof GlitchParams, value: number | boolean | string) => {
@@ -21,16 +35,17 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange, on
 
   return (
     <Panel title="CONTROLS" className="h-full flex flex-col">
-      <div className="p-2 border-b border-zinc-800 flex gap-2">
-        <Button variant="secondary" size="sm" className="flex-1" onClick={onRandomize} icon={<Icons.Refresh />}>
-          RND
-        </Button>
-        <Button variant="secondary" size="sm" className="flex-1" onClick={onReset} icon={<Icons.Undo />}>
-          RESET
-        </Button>
-      </div>
-      
-      <div className="overflow-y-auto flex-1 custom-scrollbar">
+      <div className="h-full flex flex-col">
+        <div className="p-2 border-b border-zinc-800 flex gap-2">
+          <Button variant="secondary" size="sm" className="flex-1" onClick={onRandomize} icon={<Icons.Refresh />}>
+            RND
+          </Button>
+          <Button variant="secondary" size="sm" className="flex-1" onClick={onReset} icon={<Icons.Undo />}>
+            RESET
+          </Button>
+        </div>
+        
+        <div className="overflow-y-auto flex-1 custom-scrollbar">
         
         {/* TIME & EROSION CONTROL */}
         <Section title="TIME & EROSION" defaultOpen={true}>
@@ -79,6 +94,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange, on
                   checked={params.audioEnabled} 
                   onChange={(v) => update('audioEnabled', v)} 
                />
+               <div className="mt-2">
+                 <div className="flex gap-2">
+                   <Button
+                     size="sm"
+                     variant="secondary"
+                     className="flex-1 text-[10px]"
+                     onClick={onToggleAudioPause}
+                     icon={audioPauseLabel.toUpperCase().includes('PAUSE') ? <Icons.Pause /> : <Icons.Play />}
+                     disabled={audioPauseDisabled}
+                   >
+                     {audioPauseLabel}
+                   </Button>
+                   <Button size="sm" variant="secondary" className="flex-1 text-[10px]" onClick={onStopAudio} icon={<Icons.Stop />}>
+                     STOP AUDIO
+                   </Button>
+                 </div>
+               </div>
                
                {params.audioEnabled && (
                  <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-1">
@@ -196,6 +228,216 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange, on
           <Slider label="QUALITY" value={params.quality} min={1} max={100} onChange={(e) => update('quality', Number(e.target.value))} />
         </Section>
 
+        <Section title="Analog Sync Distortion" defaultOpen={false}>
+          <div className="mb-3 p-2 bg-zinc-900/40 border border-zinc-800">
+            <label className="flex items-center justify-between mb-2 cursor-pointer group">
+              <span className="text-xs font-mono text-zinc-500 group-hover:text-cyan-400 transition-colors">ENABLE ANALOG SYNC DISTORTION</span>
+              <span className={`relative w-8 h-4 border transition-colors ${params.phaseEnabled ? 'border-cyan-500 bg-cyan-900/30' : 'border-zinc-700 bg-zinc-900'}`}>
+                <input
+                  type="checkbox"
+                  aria-label="Enable Analog Sync Distortion"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  checked={!!params.phaseEnabled}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    onChange({
+                      ...params,
+                      phaseEnabled: enabled,
+                      vSyncEnabled: enabled ? params.vSyncEnabled : false
+                    });
+                  }}
+                />
+                <span className={`absolute top-0.5 bottom-0.5 w-2.5 transition-all ${params.phaseEnabled ? 'right-0.5 bg-cyan-400' : 'left-0.5 bg-zinc-600'}`}></span>
+              </span>
+            </label>
+          </div>
+
+          <div className={params.phaseEnabled ? "opacity-100 transition-opacity" : "opacity-50 pointer-events-none transition-opacity"}>
+            <div className="text-[10px] text-zinc-400 font-bold uppercase mb-2">Phase Slip</div>
+            <Slider 
+              label="PHASE SPEED" 
+              value={params.phaseSpeed ?? 0} 
+              min={0} 
+              max={10} 
+              step={0.1} 
+              onChange={(e) => update('phaseSpeed', Number(e.target.value))} 
+            />
+            <Slider 
+              label="PHASE OFFSET" 
+              value={params.phaseOffset ?? 0} 
+              min={0} 
+              max={200} 
+              step={1} 
+              onChange={(e) => update('phaseOffset', Number(e.target.value))} 
+            />
+            <Slider 
+              label="PHASE JITTER" 
+              value={params.phaseJitter ?? 0} 
+              min={0} 
+              max={20} 
+              step={0.5} 
+              onChange={(e) => update('phaseJitter', Number(e.target.value))} 
+            />
+            <div className="flex gap-2 mb-3">
+              <button 
+                className={`flex-1 text-[10px] border py-1 font-bold ${params.wrapMode === 'hard' ? 'bg-cyan-900 border-cyan-500 text-white' : 'border-zinc-700 text-zinc-500'}`}
+                onClick={() => update('wrapMode', 'hard')}
+              >
+                HARD WRAP
+              </button>
+              <button 
+                className={`flex-1 text-[10px] border py-1 font-bold ${params.wrapMode === 'soft' ? 'bg-cyan-900 border-cyan-500 text-white' : 'border-zinc-700 text-zinc-500'}`}
+                onClick={() => update('wrapMode', 'soft')}
+              >
+                SOFT WRAP
+              </button>
+            </div>
+            <div className="flex gap-2 mb-3">
+              <button 
+                className={`flex-1 text-[10px] border py-1 font-bold ${params.banding === 'line' ? 'bg-cyan-900 border-cyan-500 text-white' : 'border-zinc-700 text-zinc-500'}`}
+                onClick={() => update('banding', 'line')}
+              >
+                LINE BANDING
+              </button>
+              <button 
+                className={`flex-1 text-[10px] border py-1 font-bold ${params.banding === 'block' ? 'bg-cyan-900 border-cyan-500 text-white' : 'border-zinc-700 text-zinc-500'}`}
+                onClick={() => update('banding', 'block')}
+              >
+                BLOCK BANDING
+              </button>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-zinc-800/50">
+              <div className="text-[10px] text-zinc-400 font-bold uppercase mb-2">Horizontal Drift</div>
+              <Slider 
+                label="H OFFSET" 
+                value={params.hOffset ?? 0} 
+                min={-50} 
+                max={50} 
+                step={0.5} 
+                onChange={(e) => update('hOffset', Number(e.target.value))} 
+              />
+              <Slider 
+                label="H SPEED" 
+                value={params.hSpeed ?? 0} 
+                min={0} 
+                max={1} 
+                step={0.01} 
+                onChange={(e) => update('hSpeed', Number(e.target.value))} 
+              />
+              <Slider 
+                label="H AMOUNT" 
+                value={params.hAmount ?? 0} 
+                min={0} 
+                max={30} 
+                step={0.5} 
+                onChange={(e) => update('hAmount', Number(e.target.value))} 
+              />
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-zinc-800/50">
+              <div className="text-[10px] text-zinc-400 font-bold uppercase mb-2">Wave Distortion</div>
+              <Slider 
+                label="WAVE AMOUNT" 
+                value={params.waveAmount ?? 0} 
+                min={0} 
+                max={30} 
+                step={0.5} 
+                onChange={(e) => update('waveAmount', Number(e.target.value))} 
+              />
+              <Slider 
+                label="WAVE FREQUENCY" 
+                value={params.waveFrequency ?? 0} 
+                min={0} 
+                max={0.1} 
+                step={0.001} 
+                onChange={(e) => update('waveFrequency', Number(e.target.value))} 
+              />
+              <Slider 
+                label="WAVE SPEED" 
+                value={params.waveSpeed ?? 0} 
+                min={0} 
+                max={1} 
+                step={0.01} 
+                onChange={(e) => update('waveSpeed', Number(e.target.value))} 
+              />
+              <Slider 
+                label="WAVE PHASE" 
+                value={params.wavePhase ?? 0} 
+                min={0} 
+                max={6.28} 
+                step={0.01} 
+                onChange={(e) => update('wavePhase', Number(e.target.value))} 
+              />
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-zinc-800/50">
+              <div className="text-[10px] text-zinc-400 font-bold uppercase mb-2">Sync Collapse</div>
+              <label className="flex items-center justify-between mb-2 cursor-pointer group">
+                <span className="text-xs font-mono text-zinc-500 group-hover:text-cyan-400 transition-colors">ENABLE SYNC COLLAPSE</span>
+                <span className={`relative w-8 h-4 border transition-colors ${params.vSyncEnabled ? 'border-cyan-500 bg-cyan-900/30' : 'border-zinc-700 bg-zinc-900'}`}>
+                  <input
+                    type="checkbox"
+                    aria-label="Enable Sync Collapse"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    checked={!!params.vSyncEnabled}
+                    onChange={(e) => update('vSyncEnabled', e.target.checked)}
+                  />
+                  <span className={`absolute top-0.5 bottom-0.5 w-2.5 transition-all ${params.vSyncEnabled ? 'right-0.5 bg-cyan-400' : 'left-0.5 bg-zinc-600'}`}></span>
+                </span>
+              </label>
+              <div className={params.vSyncEnabled ? "opacity-100 transition-opacity" : "opacity-50 pointer-events-none transition-opacity"}>
+                <Slider 
+                  label="BAND COUNT" 
+                  value={params.vSyncBandCount ?? 8} 
+                  min={1} 
+                  max={32} 
+                  step={1} 
+                  onChange={(e) => update('vSyncBandCount', Number(e.target.value))} 
+                />
+                <Slider 
+                  label="BASE SPEED" 
+                  value={params.vSyncBaseSpeed ?? 0} 
+                  min={0} 
+                  max={10} 
+                  step={0.1} 
+                  onChange={(e) => update('vSyncBaseSpeed', Number(e.target.value))} 
+                />
+                <Slider 
+                  label="BAND VARIANCE" 
+                  value={params.vSyncBandVariance ?? 0} 
+                  min={0} 
+                  max={10} 
+                  step={0.1} 
+                  onChange={(e) => update('vSyncBandVariance', Number(e.target.value))} 
+                />
+                <Slider 
+                  label="JITTER" 
+                  value={params.vSyncJitter ?? 0} 
+                  min={0} 
+                  max={10} 
+                  step={0.1} 
+                  onChange={(e) => update('vSyncJitter', Number(e.target.value))} 
+                />
+                <div className="flex gap-2">
+                  <button 
+                    className={`flex-1 text-[10px] border py-1 font-bold ${params.vSyncWrapMode === 'hard' ? 'bg-cyan-900 border-cyan-500 text-white' : 'border-zinc-700 text-zinc-500'}`}
+                    onClick={() => update('vSyncWrapMode', 'hard')}
+                  >
+                    HARD WRAP
+                  </button>
+                  <button 
+                    className={`flex-1 text-[10px] border py-1 font-bold ${params.vSyncWrapMode === 'soft' ? 'bg-cyan-900 border-cyan-500 text-white' : 'border-zinc-700 text-zinc-500'}`}
+                    onClick={() => update('vSyncWrapMode', 'soft')}
+                  >
+                    SOFT WRAP
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Section>
+
         <Section title="Professional Glitch" defaultOpen={false}>
           <div className="p-2 bg-zinc-900/40 border border-zinc-800 mb-3">
             <div className="text-[10px] text-purple-400 font-bold mb-2 uppercase">Pixel Sorting</div>
@@ -238,6 +480,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange, on
             </div>
           </div>
         </Section>
+        </div>
       </div>
     </Panel>
   );

@@ -114,7 +114,7 @@ export const applyCompressionGlitch = async (
       }
       if (bmp) {
         // Dispose previous
-        if (lastBitmap) try { lastBitmap.close(); } catch {}
+        if (lastBitmap) try { lastBitmap.close(); } catch (e) {}
         lastBitmap = bmp;
         lastUpdate = performance.now();
       }
@@ -133,7 +133,7 @@ export function getCompressionDebug() {
 }
 
 export function resetCompressionCaches() {
-  try { if (lastBitmap) (lastBitmap as any).close?.(); } catch {}
+  try { if (lastBitmap) (lastBitmap as any).close?.(); } catch (e) {}
   lastBitmap = null;
   lastSig = '';
   lastUpdate = 0;
@@ -141,3 +141,4 @@ export function resetCompressionCaches() {
   fallbackCooldown = 0;
   pending.clear();
 }
+

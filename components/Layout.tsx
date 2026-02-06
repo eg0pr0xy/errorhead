@@ -8,7 +8,7 @@ export const Layout: React.FC<{
   bottomBar: React.ReactNode; 
 }> = ({ leftPanel, centerPanel, rightPanel, bottomBar }) => {
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-black text-zinc-300 select-none">
+    <div className="fixed inset-0 w-screen h-screen overflow-hidden flex flex-col bg-black text-zinc-300 select-none">
       {/* Background Grid */}
       <div className="fixed inset-0 pointer-events-none opacity-10" 
         style={{ 
@@ -34,14 +34,14 @@ export const Layout: React.FC<{
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden relative z-10 p-2 gap-2">
+      <main className="flex-1 flex overflow-hidden relative z-10 p-2 gap-2 min-h-0">
         {/* Left: Files */}
         <div className="w-72 flex-shrink-0 flex flex-col gap-2">
           {leftPanel}
         </div>
 
         {/* Center: Canvas */}
-        <div className="flex-1 flex flex-col min-w-0 relative">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 relative h-full">
           {centerPanel}
         </div>
 

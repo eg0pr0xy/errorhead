@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ERRORHEAD - Final Import Test</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body { 
+      background: #000; 
+      color: #0ff; 
+      font-family: monospace; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 20px; font-size: 24px; }
+    #status { 
+      background: #111; 
+      border: 2px solid #0ff; 
+      padding: 20px; 
+      margin-bottom: 20px;
+      min-width: 400px;
+      font-size: 14px;
+    }
+    #status div { margin: 5px 0; }
+    .success { color: #0f0; font-weight: bold; }
+    .error { color: #f00; font-weight: bold; }
+    button {
+      background: #0ff;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover { background: #fff; }
+    canvas {
+      border: 2px solid #0ff;
+      max-width: 90vw;
+      max-height: 60vh;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ERRORHEAD - FINAL IMPORT TEST</h1>
+  
+  <div id="status">
+    <div>Status: Ready</div>
+  </div>
+  
+  <button onclick="testImageLoad()">TEST IMAGE IMPORT</button>
+  <button onclick="testVideoLoad()">TEST VIDEO IMPORT</button>
+  
+  <canvas id="canvas"></canvas>
+  
+  <script>
+    const status = document.getElementById('status');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    function log(msg, className = '') {
+      const div = document.createElement('div');
+      div.textContent = msg;
+      if (className) div.className = className;
+      status.appendChild(div);
+    }
+    
+    async function testImageLoad() {
+      status.innerHTML = '<div>Starting image test...</div>';
+      
+      try {
+        // Step 1: Fetch
+        log('1. Fetching /test.jpg...');
+        const response = await fetch('/test.jpg');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        log(`   ✓ Response OK (${response.status})`, 'success');
+        
+        // Step 2: Get blob
+        const blob = await response.blob();
+        log(`   ✓ Got blob: ${blob.size} bytes`, 'success');
+        
+        // Step 3: Create image
+        log('2. Creating HTMLImageElement...');
+        const img = new Image();
+        
+        img.onload = () => {
+          log(`   ✓ Image loaded: ${img.naturalWidth}x${img.naturalHeight}`, 'success');
+          
+          // Step 4: Draw to canvas
+          log('3. Drawing to canvas...');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          
+          // Step 5: Verify pixels
+          const imageData = ctx.getImageData(0, 0, 1, 1);
+          const hasContent = imageData.data[0] !== 0 || imageData.data[1] !== 0 || imageData.data[2] !== 0;
+          log(`   ✓ Canvas: ${canvas.width}x${canvas.height}`, 'success');
+          log(`   ✓ Pixel[0,0]: rgba(${imageData.data[0]},${imageData.data[1]},${imageData.data[2]},${imageData.data[3]})`, 'success');
+          log(`   ✓ Has content: ${hasContent ? 'YES' : 'NO'}`, hasContent ? 'success' : 'error');
+          
+          if (hasContent) {
+            log('', '');
+            log('═══════════════════════════════', 'success');
+            log('✓✓✓ IMAGE IMPORT WORKS! ✓✓✓', 'success');
+            log('═══════════════════════════════', 'success');
+          }
+        };
+        
+        img.onerror = (e) => {
+          log(`   ✗ Image load error: ${e}`, 'error');
+        };
+        
+        img.src = URL.createObjectURL(blob);
+        
+      } catch (err) {
+        log(`✗ ERROR: ${err.message}`, 'error');
+      }
+    }
+    
+    async function testVideoLoad() {
+      status.innerHTML = '<div>Starting video test...</div>';
+      
+      try {
+        log('1. Fetching /test.mp4...');
+        const response = await fetch('/test.mp4');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        log(`   ✓ Response OK`, 'success');
+        
+        const blob = await response.blob();
+        log(`   ✓ Got blob: ${blob.size} bytes`, 'success');
+        
+        log('2. Creating HTMLVideoElement...');
+        const video = document.createElement('video');
+        video.muted = true;
+        video.loop = true;
+        
+        video.onloadedmetadata = () => {
+          log(`   ✓ Video metadata: ${video.videoWidth}x${video.videoHeight}`, 'success');
+          
+          video.play().then(() => {
+            log('   ✓ Video playing', 'success');
+            
+            setTimeout(() => {
+              log('3. Drawing frame to canvas...');
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(video, 0, 0);
+              
+              const imageData = ctx.getImageData(0, 0, 1, 1);
+              const hasContent = imageData.data[0] !== 0 || imageData.data[1] !== 0 || imageData.data[2] !== 0;
+              log(`   ✓ Canvas: ${canvas.width}x${canvas.height}`, 'success');
+              log(`   ✓ Pixel[0,0]: rgba(${imageData.data[0]},${imageData.data[1]},${imageData.data[2]},${imageData.data[3]})`, 'success');
+              log(`   ✓ Has content: ${hasContent ? 'YES' : 'NO'}`, hasContent ? 'success' : 'error');
+              
+              if (hasContent) {
+                log('', '');
+                log('═══════════════════════════════', 'success');
+                log('✓✓✓ VIDEO IMPORT WORKS! ✓✓✓', 'success');
+                log('═══════════════════════════════', 'success');
+              }
+            }, 500);
+          });
+        };
+        
+        video.onerror = (e) => {
+          log(`   ✗ Video error: ${e}`, 'error');
+        };
+        
+        video.src = URL.createObjectURL(blob);
+        
+      } catch (err) {
+        log(`✗ ERROR: ${err.message}`, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -108,7 +108,7 @@ export class AudioAnalyzer {
     if (this.mediaSource) {
       try {
         this.mediaSource.disconnect();
-      } catch {}
+      } catch (e) {}
     }
     this.currentElement = element;
     
@@ -137,7 +137,7 @@ export class AudioAnalyzer {
       this.micSource = null;
     }
     if (this.mediaSource) {
-      try { this.mediaSource.disconnect(); } catch {}
+      try { this.mediaSource.disconnect(); } catch (e) {}
       // Keep the node in WeakMap for this element to reuse later
     }
     // Keep destination alive; it provides the mixed stream
@@ -259,3 +259,4 @@ export class AudioAnalyzer {
 }
 
 export const audioService = new AudioAnalyzer();
+

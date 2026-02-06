@@ -9,17 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react-dom": "19.2.0",
     "react": "19.2.0",
+    "react-dom": "19.2.0",
     "three": "0.160.0"
   },
   "devDependencies": {
     "@types/node": "22.14.0",
     "@vitejs/plugin-react": "5.0.0",
-    "typescript": "5.8.2",
-    "vite": "6.2.0",
-    "tailwindcss": "3.4.10",
+    "autoprefixer": "10.4.16",
+    "jsdom": "^28.0.0",
     "postcss": "8.4.31",
-    "autoprefixer": "10.4.16"
+    "puppeteer": "^24.36.1",
+    "tailwindcss": "3.4.10",
+    "typescript": "5.8.2",
+    "vite": "6.2.0"
   }
 }

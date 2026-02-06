@@ -90,3 +90,12 @@ jobs:
         run: |
           set -euo pipefail
           grep -E -n "onChange=\{\(e\)\s*=>\s*\{[\s\S]*onFileSelect\(f\)" components/Panels/FilePanel.tsx
+
+      - name: Control boundary — forbid playback control outside App.tsx/media_loader
+        run: |
+          set -euo pipefail
+          # Only App.tsx and media_loader may call play/pause/currentTime on media elements.
+          # Excludes compiled docs and UI components; checks core/effects/services only.
+          if rg -n -S "\\.play\\(|\\.pause\\(|\\.currentTime" services glitch_ops datamosh_ops engine frame_pipeline >/dev/null; then
+            echo "Forbidden direct media playback control outside Media Core" && rg -n -S "\\.play\\(|\\.pause\\(|\\.currentTime" services glitch_ops datamosh_ops engine frame_pipeline && exit 1
+          fi

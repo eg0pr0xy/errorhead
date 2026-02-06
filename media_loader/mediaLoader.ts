@@ -41,7 +41,7 @@ export interface MediaLoadResult {
 
 export function revokeUrl(ref: React.MutableRefObject<string | null>) {
   if (ref.current) {
-    try { URL.revokeObjectURL(ref.current); } catch {}
+    try { URL.revokeObjectURL(ref.current); } catch (e) {}
     ref.current = null;
   }
 }
@@ -56,7 +56,7 @@ export function loadImageTo(img: HTMLImageElement, canvas: HTMLCanvasElement | n
     // The original black-frame bug came from trusting layout sizes of a hidden image,
     // which caused the render loop to skip painting (opaque canvas defaults to black).
     img.onload = () => {
-      try { console.log('[Import] image onload'); } catch {}
+      try { console.log('[Import] image onload'); } catch (e) {}
       const w = img.naturalWidth || img.width || 0;
       const h = img.naturalHeight || img.height || 0;
       if (canvas && w > 0 && h > 0) {
@@ -84,7 +84,7 @@ export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement |
   lastUrlRef.current = url;
   return new Promise((resolve, reject) => {
     const onMeta = () => {
-      try { console.log('[Import] video onloadedmetadata'); } catch {}
+      try { console.log('[Import] video onloadedmetadata'); } catch (e) {}
       const w = video.videoWidth || 0;
       const h = video.videoHeight || 0;
       if (canvas && w > 0 && h > 0) {
@@ -101,8 +101,9 @@ export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement |
       reject(e as any);
     };
     video.src = url;
-    try { video.load(); } catch {}
+    try { video.load(); } catch (e) {}
     // Attempt autoplay (muted/inline)
-    video.play().then(() => { try { console.log('[Import] video play started'); } catch {} }).catch(() => {/* autoplay may be blocked; user can press play */});
+    video.play().then(() => { try { console.log('[Import] video play started'); } catch (e) {} }).catch(() => {/* autoplay may be blocked; user can press play */});
   });
 }
+

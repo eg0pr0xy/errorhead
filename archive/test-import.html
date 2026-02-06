@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Import</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .logs {
+            width: 80%;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #111;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        video {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Import</h1>
+    <p id="status">Loading...</p>
+    <video id="video" src="/test.mp4" controls style="width: 640px; height: 360px;"></video>
+    <button id="playButton">Play</button>
+    <button id="pauseButton">Pause</button>
+    <div class="logs" id="logs"></div>
+
+    <script>
+        const videoElement = document.getElementById('video');
+        const statusElement = document.getElementById('status');
+        const playButton = document.getElementById('playButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(msg) {
+            const p = document.createElement('p');
+            p.textContent = msg;
+            logsDiv.appendChild(p);
+            console.log(msg);
+        }
+
+        log('Initializing video...');
+        
+        videoElement.onloadedmetadata = () => {
+            log(`Video metadata loaded: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+            statusElement.textContent = `Video loaded: ${videoElement.videoWidth}x${videoElement.videoHeight}`;
+            videoElement.play().then(() => {
+                log('Video playing');
+                statusElement.textContent = `Video playing: ${videoElement.videoWidth}x${videoElement.videoHeight}`;
+            }).catch(err => {
+                log(`Video play error: ${err.message}`);
+                console.error('Video play error stack:', err.stack);
+                statusElement.textContent = 'Video play error';
+            });
+        };
+        
+        videoElement.onerror = (e) => {
+            log(`Video load error: ${e}`);
+            statusElement.textContent = 'Video load error';
+        };
+        
+        videoElement.onwaiting = () => {
+            log('Video waiting');
+        };
+        
+        videoElement.onloadeddata = () => {
+            log('Video data loaded');
+        };
+        
+        videoElement.oncanplay = () => {
+            log('Video can play');
+        };
+        
+        playButton.addEventListener('click', () => {
+            videoElement.play().then(() => {
+                log('Play button clicked');
+            }).catch(err => {
+                log(`Play error: ${err.message}`);
+                console.error('Play error stack:', err.stack);
+            });
+        });
+        
+        pauseButton.addEventListener('click', () => {
+            videoElement.pause();
+            log('Pause button clicked');
+        });
+        
+        window.addEventListener('load', () => {
+            log('Page loaded');
+        });
+    </script>
+</body>
+</html>

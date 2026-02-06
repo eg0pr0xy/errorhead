@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Canvas Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        canvas {
+            border: 2px solid #444;
+            background-color: #000;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Direct Canvas Test</h1>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <button id="drawBtn">Draw Test Pattern</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        console.log('Canvas element:', canvas);
+        console.log('Canvas context:', ctx);
+
+        const drawTestPattern = () => {
+            console.log('Drawing test pattern');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw gradient background
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#000000');
+            gradient.addColorStop(0.5, '#00ff00');
+            gradient.addColorStop(1, '#0000ff');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw a white rectangle
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(canvas.width * 0.25, canvas.height * 0.25, canvas.width * 0.5, canvas.height * 0.5);
+            
+            // Draw text
+            ctx.fillStyle = '#ff0000';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('CANVAS TEST', canvas.width / 2, canvas.height / 2);
+            
+            console.log('Test pattern drawn');
+        };
+
+        const drawBtn = document.getElementById('drawBtn');
+        drawBtn.addEventListener('click', drawTestPattern);
+
+        // Draw test pattern immediately
+        drawTestPattern();
+    </script>
+</body>
+</html>

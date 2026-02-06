@@ -20,11 +20,11 @@ export const applyPostProcessing = (
   const bX = params.blueShift + (gShift * 0.5);
 
   if (rX !== 0 || gX !== 0 || bX !== 0) {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, width, height);
+  // ctx.globalCompositeOperation = 'source-over'; // disabled: effects must not draw background
+  // ctx.fillStyle = '#000000'; // disabled: effects must not draw background
+  // ctx.fillRect(0, 0, width, height); // disabled: effects must not draw background
     ctx.globalCompositeOperation = 'screen';
-
+ 
     const drawChannel = (color: string, offset: number) => {
       jpgCtx.globalCompositeOperation = 'source-over';
       jpgCtx.clearRect(0, 0, width, height);
@@ -66,3 +66,6 @@ export const applyPostProcessing = (
     }
   }
 };
+
+
+

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Loader Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Media Loader Component Test</h1>
+    <div class="container" id="root"></div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom": "https://esm.sh/react-dom@18.2.0"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import React from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { TestMediaComponent } from './components/TestMediaComponent.tsx';
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<TestMediaComponent />);
+    </script>
+</body>
+</html>

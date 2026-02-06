@@ -2,7 +2,7 @@
 import { Preset, GlitchParams } from './types';
 
 export const DEFAULT_PARAMS: GlitchParams = {
-  amount: 35,
+  amount: 0,
   seed: 25,
   iterations: 5,
   quality: 60,
@@ -126,6 +126,32 @@ export const DEFAULT_PARAMS: GlitchParams = {
   audioQuantize: 0,
   // Compression safety
   corruptMode: 'safe',
+  // Optional strict effects layer (post-processing)
+  strictEffectsEnabled: false,
+
+  // Analog Phase Slip (off by default)
+  phaseEnabled: false,
+  phaseOffset: 0,
+  phaseSpeed: 0,
+  phaseJitter: 0,
+  wrapMode: 'hard',
+  banding: 'line',
+  // Horizontal Drift + Wave (off by default)
+  hOffset: 0,
+  hSpeed: 0,
+  hAmount: 0,
+  waveAmount: 0,
+  waveFrequency: 0,
+  waveSpeed: 0,
+  wavePhase: 0,
+
+  // Vertical Sync Collapse (off by default)
+  vSyncEnabled: false,
+  vSyncBandCount: 8,
+  vSyncBaseSpeed: 0,
+  vSyncBandVariance: 0,
+  vSyncJitter: 0,
+  vSyncWrapMode: 'hard',
 };
 
 export const APP_VERSION = 'v2.1.0';
@@ -357,6 +383,47 @@ export const PRESETS: Preset[] = [
       brightness: 110,
       scanlines: true,
       scanlineIntensity: 10
+    }
+  },
+  {
+    id: 'bates-motel-tv',
+    name: 'BATES MOTEL TV',
+    params: {
+      ...DEFAULT_PARAMS,
+      // Analog Sync Distortion
+      phaseEnabled: true,
+      phaseSpeed: 0.12,
+      phaseOffset: 5,
+      phaseJitter: 0.2,
+      wrapMode: 'soft',
+      banding: 'line',
+
+      // Sync Collapse (band-based drift)
+      vSyncEnabled: true,
+      vSyncBandCount: 8,
+      vSyncBaseSpeed: 0.05,
+      vSyncBandVariance: 0.08,
+      vSyncJitter: 0.15,
+      vSyncWrapMode: 'soft',
+
+      // Horizontal / Wave motion
+      hAmount: 3,
+      hSpeed: 0.05,
+      hOffset: 0,
+      waveAmount: 4,
+      waveFrequency: 0.01,
+      waveSpeed: 0.05,
+      wavePhase: 0,
+
+      // Subtle CRT character
+      scanlines: true,
+      scanlineIntensity: 12,
+      noise: 2,
+
+      // Avoid digital glitching
+      amount: 0,
+      pixelSort: 0,
+      channelSep: 0
     }
   }
 ];

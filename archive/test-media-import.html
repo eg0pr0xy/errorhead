@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ERRORHEAD - Media Import Test</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #000; color: #0ff; font-family: monospace; }
+    canvas { border: 2px solid #0ff; display: block; margin: 20px 0; }
+    button { background: #0ff; color: #000; border: none; padding: 10px 20px; margin: 5px; cursor: pointer; font-family: monospace; font-weight: bold; }
+    button:hover { background: #fff; }
+    #log { background: #111; border: 1px solid #333; padding: 10px; max-height: 300px; overflow-y: auto; font-size: 11px; }
+    .success { color: #0f0; }
+    .error { color: #f00; }
+    .info { color: #0ff; }
+  </style>
+</head>
+<body>
+  <h1>ERRORHEAD - Media Import Test</h1>
+  <p>Testing if image/video can load and render to canvas</p>
+  
+  <button onclick="testImage()">Test Image (test.jpg)</button>
+  <button onclick="testVideo()">Test Video (test.mp4)</button>
+  <button onclick="clearCanvas()">Clear Canvas</button>
+  
+  <canvas id="canvas" width="800" height="600"></canvas>
+  
+  <h3>Console Log:</h3>
+  <div id="log"></div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const logDiv = document.getElementById('log');
+    
+    function log(msg, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const line = document.createElement('div');
+      line.className = type;
+      line.textContent = `[${time}] ${msg}`;
+      logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(msg);
+    }
+    
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      log('Canvas cleared', 'info');
+    }
+    
+    function testImage() {
+      log('Loading test.jpg...', 'info');
+      
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        log(`✓ Image loaded: ${img.naturalWidth}x${img.naturalHeight}`, 'success');
+        
+        // Resize canvas to match image
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        log(`✓ Canvas resized to ${canvas.width}x${canvas.height}`, 'success');
+        
+        // Draw image
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        log('✓ Image drawn to canvas', 'success');
+        
+        // Verify pixels
+        const imgData = ctx.getImageData(0, 0, 1, 1);
+        log(`✓ Pixel data: R=${imgData.data[0]} G=${imgData.data[1]} B=${imgData.data[2]}`, 'success');
+      };
+      
+      img.onerror = (e) => {
+        log(`✗ Image load error: ${e}`, 'error');
+      };
+      
+      img.src = '/test.jpg';
+    }
+    
+    function testVideo() {
+      log('Loading test.mp4...', 'info');
+      
+      const video = document.createElement('video');
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.playsInline = true;
+      
+      video.onloadedmetadata = () => {
+        log(`✓ Video metadata loaded: ${video.videoWidth}x${video.videoHeight}`, 'success');
+        
+        // Resize canvas
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        log(`✓ Canvas resized to ${canvas.width}x${canvas.height}`, 'success');
+        
+        // Play video and render frames
+        video.play().then(() => {
+          log('✓ Video playing', 'success');
+          
+          function renderFrame() {
+            if (!video.paused && !video.ended) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              requestAnimationFrame(renderFrame);
+            }
+          }
+          renderFrame();
+          
+          log('✓ Video rendering to canvas', 'success');
+        }).catch(err => {
+          log(`✗ Video play error: ${err}`, 'error');
+        });
+      };
+      
+      video.onerror = (e) => {
+        log(`✗ Video load error: ${e}`, 'error');
+      };
+      
+      video.src = '/test.mp4';
+    }
+    
+    // Initial state
+    clearCanvas();
+    log('Test page ready', 'info');
+    log('Click buttons above to test image/video loading', 'info');
+  </script>
+</body>
+</html>

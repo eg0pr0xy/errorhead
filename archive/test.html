@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        canvas {
+            border: 2px solid #444;
+            background-color: #000;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Canvas Rendering Test</h1>
+        <canvas id="testCanvas" width="800" height="600"></canvas>
+        <button id="loadImageBtn">Load Test Image</button>
+        <button id="clearCanvasBtn">Clear Canvas</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+        const loadImageBtn = document.getElementById('loadImageBtn');
+        const clearCanvasBtn = document.getElementById('clearCanvasBtn');
+        const statusDiv = document.getElementById('status');
+
+        loadImageBtn.addEventListener('click', async () => {
+            try {
+                statusDiv.textContent = 'Loading image...';
+                const image = new Image();
+                image.crossOrigin = 'anonymous';
+                image.src = '/test.jpg';
+                
+                image.onload = () => {
+                    statusDiv.textContent = `Image loaded: ${image.naturalWidth}x${image.naturalHeight}`;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                };
+                
+                image.onerror = () => {
+                    statusDiv.textContent = 'Error loading image';
+                };
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        clearCanvasBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            statusDiv.textContent = 'Canvas cleared';
+        });
+    </script>
+</body>
+</html>

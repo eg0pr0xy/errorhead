@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .logs {
+            width: 80%;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #111;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        video {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Test</h1>
+    <p id="status">Loading...</p>
+    <video id="video" controls style="width: 640px; height: 360px;"></video>
+    <button id="playButton">Play</button>
+    <button id="pauseButton">Pause</button>
+    <div class="logs" id="logs"></div>
+
+    <script>
+        const videoElement = document.getElementById('video');
+        const statusElement = document.getElementById('status');
+        const playButton = document.getElementById('playButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(msg) {
+            const p = document.createElement('p');
+            p.textContent = msg;
+            logsDiv.appendChild(p);
+            console.log(msg);
+        }
+
+        log('Initializing video...');
+        
+        const loadVideo = async () => {
+            try {
+                log('Fetching /test.mp4...');
+                const response = await fetch('/test.mp4');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                log('Response received');
+                log('Response status:', response.status);
+                log('Response headers:', Object.fromEntries(response.headers.entries()));
+                const blob = await response.blob();
+                log(`Blob received: ${blob.type}, ${blob.size} bytes`);
+                const url = URL.createObjectURL(blob);
+                log(`URL created: ${url}`);
+                
+                videoElement.src = url;
+                videoElement.load();
+                
+                videoElement.onloadedmetadata = () => {
+                    log(`Video metadata loaded: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+                    statusElement.textContent = `Video loaded: ${videoElement.videoWidth}x${videoElement.videoHeight}`;
+                    videoElement.play().then(() => {
+                        log('Video playing');
+                        statusElement.textContent = `Video playing: ${videoElement.videoWidth}x${videoElement.videoHeight}`;
+                    }).catch(err => {
+                        log(`Video play error: ${err.message}`);
+                        statusElement.textContent = 'Video play error';
+                    });
+                };
+                
+                videoElement.onerror = (e) => {
+                    log(`Video load error: ${e}`);
+                    statusElement.textContent = 'Video load error';
+                };
+            } catch (err) {
+                log(`Failed: ${err.message}`);
+                console.error(err.stack);
+                statusElement.textContent = 'Failed to load video';
+            }
+        };
+        
+        loadVideo();
+        
+        playButton.addEventListener('click', () => {
+            videoElement.play().then(() => {
+                log('Play button clicked');
+            }).catch(err => {
+                log(`Play error: ${err.message}`);
+            });
+        });
+        
+        pauseButton.addEventListener('click', () => {
+            videoElement.pause();
+            log('Pause button clicked');
+        });
+        
+        window.addEventListener('load', () => {
+            log('Page loaded');
+        });
+    </script>
+</body>
+</html>

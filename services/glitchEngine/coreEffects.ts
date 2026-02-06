@@ -263,8 +263,7 @@ export const applyAudioFrameEvents = (
     // Execute active event
     switch (eventState.activeEvent) {
       case 'freeze':
-        if (eventState.frozenFrame) {
-          ctx.clearRect(0, 0, width, height);
+        if (eventState.frozenFrame) {        // ctx.clearRect(0, 0, width, height); // disabled: effects must not clear final canvas
           ctx.drawImage(eventState.frozenFrame, 0, 0, width, height);
           return true; // Hijacking frame
         }
@@ -277,8 +276,7 @@ export const applyAudioFrameEvents = (
           (duration - eventState.eventFramesRemaining)
         );
         if (reverseIdx >= 0 && reverseIdx < eng.state.historyFrames.length) {
-          const frame = eng.state.historyFrames[reverseIdx];
-          ctx.clearRect(0, 0, width, height);
+          const frame = eng.state.historyFrames[reverseIdx];        // ctx.clearRect(0, 0, width, height); // disabled: effects must not clear final canvas
           ctx.drawImage(frame, 0, 0, width, height);
           return true; // Hijacking frame
         }
@@ -288,8 +286,7 @@ export const applyAudioFrameEvents = (
         // Swap with random history frame
         if (eng.state.historyFrames.length > 0) {
           const swapIdx = Math.floor(Math.random() * eng.state.historyFrames.length);
-          const frame = eng.state.historyFrames[swapIdx];
-          ctx.clearRect(0, 0, width, height);
+          const frame = eng.state.historyFrames[swapIdx];        // ctx.clearRect(0, 0, width, height); // disabled: effects must not clear final canvas
           ctx.drawImage(frame, 0, 0, width, height);
           return true; // Hijacking frame
         }
@@ -392,3 +389,5 @@ export const getChaosModulatedSeed = (
   
   return Math.max(0, Math.min(100, seed));
 };
+
+

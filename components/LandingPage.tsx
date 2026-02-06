@@ -1,24 +1,20 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Button } from './UIComponents';
 
 interface LandingPageProps {
   onEnter: () => void;
-  isExiting: boolean;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
   const [dots, setDots] = useState<{x: number, y: number, s: number, d: number}[]>([]);
-  const [videoOk, setVideoOk] = useState(true);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const paletteRef = useRef<string[]>([
     '#22d3ee', '#f472b6', '#a3e635', '#f59e0b', '#ef4444', '#8b5cf6', '#10b981', '#eab308'
   ]);
   const [headColors, setHeadColors] = useState<string[]>(['#22d3ee','#22d3ee','#22d3ee','#22d3ee']);
 
-  // Generate a "Starfield" of data points
+  // Generate a subtle "starfield" of data points (lightweight)
   useEffect(() => {
-    const newDots = Array.from({ length: 40 }).map(() => ({
+    const newDots = Array.from({ length: 20 }).map(() => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       s: Math.random() * 2 + 1,
@@ -29,32 +25,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
 
   // Rapid color cycle for letters H E A D
   useEffect(() => {
-    if (isExiting) return;
     const id = window.setInterval(() => {
       const p = paletteRef.current;
       setHeadColors(prev => prev.map(() => p[Math.floor(Math.random() * p.length)]));
     }, 140);
     return () => { window.clearInterval(id); };
-  }, [isExiting]);
+  }, []);
 
   return (
-    <div className={`fixed inset-0 z-[100] w-screen h-screen overflow-hidden bg-[#050505] flex items-center justify-center font-mono select-none transition-opacity duration-300 ${isExiting ? 'animate-exit-purge' : ''}`}>
+    <div 
+      className="fixed inset-0 z-[100] w-screen h-screen overflow-hidden bg-[#050505] flex items-center justify-center font-mono select-none transition-opacity duration-300"
+      onClick={onEnter}
+    >
       
       {/* BACKGROUND: DATA VOID ENGINE */}
       <div className="absolute inset-0 z-0">
-        {/* Fullscreen Background Video (optional). Place file at /public/landing.mp4 */}
-        {videoOk && (
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none"
-            src={import.meta.env.BASE_URL + 'landing.mp4'}
-            autoPlay
-            muted
-            loop
-            playsInline
-            onError={() => setVideoOk(false)}
-          />
-        )}
+        {/* Plain background video (isolated from Media Core) */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none"
+          src="/landing.mp4"
+          muted
+          autoPlay
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true" />
         {/* Animated Data Particles */}
         {dots.map((dot, i) => (
           <div 
@@ -83,7 +78,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
       <div className="relative z-10 flex flex-col items-center gap-12 text-center px-4">
         
         {/* LOGO GROUP */}
-        <div className={`space-y-4 group transition-all duration-500 ${isExiting ? 'opacity-0 scale-95 blur-sm' : ''}`}>
+        <div className="space-y-4 group transition-all duration-500">
           <div className="flex flex-col items-center">
              <div className="text-[10px] text-cyan-700 tracking-[1em] mb-2 translate-x-[0.5em] font-bold">NEUE EPISTEME PRESENTS</div>
              <h1
@@ -105,21 +100,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter, isExiting }) 
         </div>
 
         {/* SYSTEM STATUS READOUT */}
-        <div className={`flex flex-col items-center gap-6 transition-all duration-300 delay-75 ${isExiting ? 'opacity-0 scale-90' : ''}`}>
+        <div className="flex flex-col items-center gap-6 transition-all duration-300 delay-75">
            <div className="w-1 bg-cyan-500/40 h-12"></div>
            
-           <Button 
-            variant="primary" 
-            size="md" 
-            disabled={isExiting}
-            className={`px-16 py-8 text-xl border-cyan-500/50 bg-black hover:border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.05)] hover:shadow-[0_0_60px_rgba(6,182,212,0.15)] transition-all duration-700 group relative overflow-hidden animate-vibrate btn-glitch ${isExiting ? 'btn-shred' : ''}`}
-            onClick={onEnter}
-          >
-            <span className="label relative z-10 tracking-[0.5em] font-bold transition-colors" data-text={isExiting ? 'PURGING...' : 'INITIALIZE'}>
-              {isExiting ? 'PURGING...' : 'INITIALIZE'}
-            </span>
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#22d3ee,#f472b6,#a3e635,#06b6d4)] bg-[length:200%_100%] animate-btn-gradient translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out opacity-70"></div>
-          </Button>
+           <button
+             onClick={onEnter}
+             className="px-16 py-8 text-xl border-cyan-500/50 bg-black hover:border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.05)] hover:shadow-[0_0_60px_rgba(6,182,212,0.15)] transition-all duration-700 group relative overflow-hidden animate-vibrate btn-glitch cursor-pointer"
+           >
+             <span className="label relative z-10 tracking-[0.5em] font-bold transition-colors" data-text="ENTER">
+               ENTER
+             </span>
+             <div className="absolute inset-0 bg-[linear-gradient(90deg,#22d3ee,#f472b6,#a3e635,#06b6d4)] bg-[length:200%_100%] animate-btn-gradient translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out opacity-70"></div>
+           </button>
 
           <div className="mt-8 flex flex-col items-center gap-2">
             <div className="flex gap-4 text-[9px] text-zinc-700 tracking-[0.3em] font-bold uppercase">

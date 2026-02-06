@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Fetch</title>
+</head>
+<body>
+    <h1>Test Fetching test.jpg</h1>
+    <img id="testImage" src="" alt="Test Image">
+    <script>
+        async function testFetch() {
+            try {
+                console.log('Fetching /test.jpg');
+                const response = await fetch('/test.jpg');
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                const blob = await response.blob();
+                console.log('Blob type:', blob.type);
+                console.log('Blob size:', blob.size);
+                
+                const url = URL.createObjectURL(blob);
+                const img = document.getElementById('testImage');
+                img.src = url;
+                
+                img.onload = () => {
+                    console.log('Image loaded');
+                    console.log('Natural width:', img.naturalWidth);
+                    console.log('Natural height:', img.naturalHeight);
+                };
+                
+                img.onerror = (e) => {
+                    console.error('Image load error:', e);
+                };
+                
+            } catch (err) {
+                console.error('Error:', err);
+            }
+        }
+        
+        testFetch();
+    </script>
+</body>
+</html>

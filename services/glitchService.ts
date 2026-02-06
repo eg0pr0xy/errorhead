@@ -37,7 +37,11 @@ import { applyMotionVectorAbuseS } from '../datamosh_ops/mvAbuse';
 import { applyMeltS, applyShredS, applyScatterS, applyPixelSort, applyChannelSeparation } from '../glitch_ops/stateless';
 import { applyCompressionGlitch, getCompressionDebug, resetCompressionCaches } from './glitchEngine/compression';
 import { applyPostProcessing } from './glitchEngine/post';
+import { applyAnalogPhaseSlip } from './glitchEngine/phaseSlip';
+import { applyVerticalSyncCollapse } from './glitchEngine/verticalSyncCollapse';
 import { applyMotionSculptureWebGL, resetWebGLMosh, getWebGLMoshDebug } from './glitchEngine/webgl/applyMotionSculptureWebGL';
+import { applyEffectStack, setEffectStack } from './effects/stack';
+import { buildEffectsFromParams } from './effects/bind';
 import { 
   applyTemporalEcho,
   applyTimeSmear,
@@ -56,6 +60,7 @@ import {
 
 // Temporary debug overlay toggle: enable by setting window.__ERRORHEAD_DEBUG__ = true in console
 const DEBUG_OVERLAY = (typeof window !== 'undefined' && (window as any).__ERRORHEAD_DEBUG__ === true);
+let audioCvSmooth = 0;
 
 /**
  * Main Orchestrator for the Glitch Engine.
@@ -96,7 +101,7 @@ export const renderGlitch = async (
       const c = source as HTMLCanvasElement;
       dbg.media = 'canvas'; dbg.mw = c.width; dbg.mh = c.height;
     }
-  } catch {}
+  } catch (e) {}
   // 1. Sync Buffer Sizes
   const eng = engOpt ?? getGlobalEngineContext();
   const B = engOpt ? eng.buffers : globalBuffers;
@@ -143,52 +148,67 @@ export const renderGlitch = async (
     
     // Apply gain (normalized to useful range)
     const cv = Math.min(1.0, rawCV * (params.audioGain / 50));
+    // Apply smoothing (0 = none, 100 = heavy)
+    const smooth = Math.max(0, Math.min(1, (params.audioSmooth ?? 0) / 100));
+    const alpha = 1 - smooth;
+    audioCvSmooth = audioCvSmooth + (cv - audioCvSmooth) * alpha;
+    const cvVis = Math.min(1.0, audioCvSmooth * 1.4);
+
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+    const addMod = (base: number, add: number, min: number, max: number) => {
+      const next = base + add;
+      const minClamp = base > 0 ? base : min;
+      return clamp(next, minClamp, max);
+    };
     
     // Apply modulation to targets (depth controls intensity)
     if (params.audioTargetRgb > 0) {
       const depth = params.audioTargetRgb / 100;
-      params.rgbShift = Math.max(0, params.rgbShift + cv * depth * 50);
+      params.rgbShift = addMod(baseParams.rgbShift ?? 0, cvVis * depth * 50, 0, 50);
     }
     
     if (params.audioTargetAmount > 0) {
       const depth = params.audioTargetAmount / 100;
-      params.amount = Math.max(0, params.amount + cv * depth * 40);
+      params.amount = addMod(baseParams.amount ?? 0, cvVis * depth * 40, 0, 100);
     }
     
     if (params.audioTargetWarp > 0) {
       const depth = params.audioTargetWarp / 100;
-      params.moshWarp = Math.max(0, params.moshWarp + cv * depth * 60);
+      params.moshWarp = addMod(baseParams.moshWarp ?? 0, cvVis * depth * 60, 0, 200);
     }
     
     if (params.audioTargetFeedback && params.audioTargetFeedback > 0) {
       const depth = params.audioTargetFeedback / 100;
-      params.feedback = Math.max(0, Math.min(100, params.feedback + cv * depth * 20));
+      params.feedback = addMod(baseParams.feedback ?? 0, cvVis * depth * 20, 0, 100);
     }
     
     if (params.audioTargetBlocks && params.audioTargetBlocks > 0) {
       const depth = params.audioTargetBlocks / 100;
-      params.blockList = Math.max(0, Math.min(100, params.blockList + cv * depth * 60));
+      params.blockList = addMod(baseParams.blockList ?? 0, cvVis * depth * 60, 0, 100);
     }
     
     if (params.audioTargetMelt && params.audioTargetMelt > 0) {
       const depth = params.audioTargetMelt / 100;
-      params.melt = Math.max(0, Math.min(100, params.melt + cv * depth * 50));
+      params.melt = addMod(baseParams.melt ?? 0, cvVis * depth * 50, 0, 100);
     }
     
     if (params.audioTargetShake && params.audioTargetShake > 0) {
       const depth = params.audioTargetShake / 100;
-      params.shake = Math.max(0, Math.min(100, params.shake + cv * depth * 80));
+      params.shake = addMod(baseParams.shake ?? 0, cvVis * depth * 80, 0, 100);
     }
     
     if (params.audioTargetNoise && params.audioTargetNoise > 0) {
       const depth = params.audioTargetNoise / 100;
-      params.noise = Math.max(0, Math.min(100, params.noise + cv * depth * 60));
+      params.noise = addMod(baseParams.noise ?? 0, cvVis * depth * 60, 0, 100);
     }
     
     // CRT pulse on transients
     if (params.scanlines && features.transient > 0.5) {
-       params.scanlineIntensity = Math.min(100, params.scanlineIntensity + features.transient * 30);
+       params.scanlineIntensity = addMod(baseParams.scanlineIntensity ?? 0, features.transient * 30, 0, 100);
     }
+  }
+  else {
+    audioCvSmooth = 0;
   }
 
   // 3. Input Processing
@@ -302,6 +322,12 @@ export const renderGlitch = async (
 
   // 7. Post Processing
   applyPostProcessing(ctx, compressedSource, params, width, height, tGlobal);
+
+  // 7.2. Analog Phase Slip (optional)
+  applyAnalogPhaseSlip(ctx, swapCtx, params, width, height, tGlobal);
+
+  // 7.2.1. Vertical Sync Collapse (optional)
+  applyVerticalSyncCollapse(ctx, swapCtx, params, width, height);
 
   // 7.3. PROFESSIONAL GLITCH EFFECTS (Pixel-level operations)
   // Pixel Sorting - professional glitch aesthetic
@@ -452,8 +478,10 @@ export const renderGlitch = async (
     try {
       const glCanvas = webglMoshService.render(ctx.canvas, params, tGlobal * params.timeScaleDisp);
       if (glCanvas && glCanvas.width > 0 && glCanvas.height > 0) {
-        ctx.globalCompositeOperation = 'source-over';
+        ctx.save();
+        ctx.globalCompositeOperation = 'copy';
         ctx.drawImage(glCanvas, 0, 0, width, height);
+        ctx.restore();
         dbg.overlayOk = true;
       }
     } catch (e) {
@@ -462,6 +490,19 @@ export const renderGlitch = async (
     }
   } else {
     S.prevShaderMoshEnabled = false;
+  }
+
+  // 8.5. Optional Strict Effects Layer (post-processing only)
+  const strictFxEnabled = !!params.strictEffectsEnabled || (typeof window !== 'undefined' && (window as any).__ERRORHEAD_STRICT_FX__ === true);
+  if (strictFxEnabled) {
+    try {
+      const sourceType = (source instanceof HTMLVideoElement) ? 'video' : 'image';
+      setEffectStack(buildEffectsFromParams(params));
+      await applyEffectStack(ctx, { width, height, time: tGlobal, sourceType });
+    } catch (e) {
+      // Non-fatal: strict layer must never break base rendering
+      try { console.warn('[Effects] strict layer failed; continuing', e); } catch {}
+    }
   }
 
   // 9. Debug Overlay (temporary)
@@ -484,7 +525,8 @@ export const renderGlitch = async (
       ctx.fillStyle = '#00FFFF';
       for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i], 12, 12 + (i + 1) * lh - 4);
       ctx.restore();
-    } catch {}
+    } catch (e) {}
   }
 };
+
 

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Import Trigger</title>
+  <style>
+    body { background: #000; color: #0ff; font-family: monospace; padding: 20px; }
+    button { background: #0ff; color: #000; padding: 20px 40px; font-size: 20px; font-weight: bold; border: none; cursor: pointer; margin: 10px; }
+    button:hover { background: #fff; }
+    #status { margin-top: 20px; padding: 10px; border: 1px solid #333; background: #111; }
+  </style>
+</head>
+<body>
+  <h1>ERRORHEAD - Direct Import Test</h1>
+  <p>This will load test.jpg directly into the main app window</p>
+  
+  <button onclick="testImport()">Import test.jpg into Main App</button>
+  <button onclick="testVideoImport()">Import test.mp4 into Main App</button>
+  
+  <div id="status"></div>
+  
+  <script>
+    function log(msg) {
+      const status = document.getElementById('status');
+      status.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+    }
+    
+    async function testImport() {
+      log('Fetching test.jpg...');
+      try {
+        const response = await fetch('/test.jpg');
+        const blob = await response.blob();
+        log('✓ Got blob: ' + blob.size + ' bytes');
+        
+        const file = new File([blob], 'test.jpg', { type: 'image/jpeg' });
+        log('✓ Created File object');
+        
+        // Try to find the main app window
+        if (window.opener) {
+          log('Using window.opener');
+          const handleFileSelect = window.opener.handleFileSelect || 
+                                  (window.opener.React && window.opener.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED);
+          if (handleFileSelect) {
+            handleFileSelect(file);
+            log('✓ Called handleFileSelect');
+          } else {
+            log('✗ Could not find handleFileSelect in opener');
+          }
+        } else {
+          log('Opening main app in new window...');
+          const win = window.open('/', 'errorhead');
+          setTimeout(() => {
+            log('Triggering file input in main window...');
+            const input = win.document.querySelector('input[type="file"]');
+            if (input) {
+              const dt = new DataTransfer();
+              dt.items.add(file);
+              input.files = dt.files;
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              log('✓ Triggered file input change');
+            } else {
+              log('✗ File input not found');
+            }
+          }, 1000);
+        }
+      } catch (err) {
+        log('✗ Error: ' + err.message);
+      }
+    }
+    
+    async function testVideoImport() {
+      log('Fetching test.mp4...');
+      try {
+        const response = await fetch('/test.mp4');
+        const blob = await response.blob();
+        log('✓ Got blob: ' + blob.size + ' bytes');
+        
+        const file = new File([blob], 'test.mp4', { type: 'video/mp4' });
+        log('✓ Created File object');
+        
+        log('Opening main app in new window...');
+        const win = window.open('/', 'errorhead');
+        setTimeout(() => {
+          log('Triggering file input in main window...');
+          const input = win.document.querySelector('input[type="file"]');
+          if (input) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            log('✓ Triggered file input change');
+          } else {
+            log('✗ File input not found');
+          }
+        }, 1000);
+      } catch (err) {
+        log('✗ Error: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+CONTROL BOUNDARY (LOCKED)
+
+This project enforces a strict separation between UI and Media Core.
+
+UI:
+- Must NOT access HTMLVideoElement/HTMLImageElement directly.
+- Must NOT call play(), pause(), or set currentTime on media elements.
+- STOP/rewind controls are forbidden; do not reset media time or buffers from UI.
+
+Media Core (App.tsx + media_loader/*):
+- Sole authority to create and control media elements.
+- Produces FrameSource; effects/render consume frames only.
+
+Why this lock exists:
+- Prevents parallel media pipelines and hard-to-debug state races.
+- Ensures the FrameSource contract remains the single source of truth.
+
+CI Guardrails:
+- .github/workflows/media-lock.yml forbids playback control (play/pause/currentTime)
+  in services/engine/effects directories. Only App.tsx and media_loader are allowed.
+
+If you need to extend controls:
+- Add new callbacks in UI → implement their behavior in App.tsx.
+- Do not pass media elements or refs through UI.

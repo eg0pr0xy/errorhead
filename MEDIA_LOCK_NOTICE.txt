@@ -4,6 +4,9 @@ FrameSource is a locked, read-only contract.
 Do not refactor media import without updating this contract.
 Effects consume frames, they do not create them.
 
+GLOBAL RULE (CRITICAL)
+UI may CONTROL media playback, but must NEVER bypass or modify the FrameSource Contract. Media Core remains the single source of truth.
+
 Rule Zero (Absolute)
 - Media import must never regress. Image and video import/render must always work.
 

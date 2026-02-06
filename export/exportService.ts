@@ -146,9 +146,10 @@ export async function startCanvasRecording(
 
 export function stopCanvasRecording(ctx: RecordContext) {
   if (!ctx.recorderRef.current) return;
-  try { ctx.recorderRef.current.stop(); } catch {}
+  try { ctx.recorderRef.current.stop(); } catch (e) {}
   if (ctx.recordTimerRef.current) {
     clearTimeout(ctx.recordTimerRef.current as any);
     ctx.recordTimerRef.current = null;
   }
 }
+

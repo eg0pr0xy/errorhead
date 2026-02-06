@@ -26,5 +26,6 @@ Docs
 
 
 Landing
-- Add fullscreen background video at `public/landing.mp4` (muted, loop recommended)
-- Press "INITIALIZE" to enter and activate audio (resumes AudioContext)
+- Lightweight landing screen appears before the editor
+- Title, tagline, and primary CTA: "ENTER"
+- No audio/video preloaded on landing; media initializes after entering

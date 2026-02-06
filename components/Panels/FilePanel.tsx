@@ -78,21 +78,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
   const [exportMode, setExportMode] = useState<'image' | 'video'>('image');
   const [recordDuration, setRecordDuration] = useState<number>(0);
 
-  // DEBUG: verify components are defined at runtime
-  console.log(
-    "FilePanel components:",
-    Panel,
-    Button,
-    Slider,
-    Icons?.Video,
-    Icons?.Upload,
-    Icons?.Folder,
-    Icons?.Link,
-    Icons?.Save,
-    Icons?.Camera,
-    Icons?.Stop,
-    Icons?.Record
-  );
+    
 
   // Auto-switch export mode based on context
   useEffect(() => {
@@ -109,6 +95,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const f = e.dataTransfer.files[0];
       console.log('[Import] drop:', f.name, f.type);
+      try { window.dispatchEvent(new CustomEvent('eh-diag', { detail: { type: 'file-drop', file: f } })); } catch (e) {}
       onFileSelect(f);
     }
   };
@@ -201,6 +188,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
             onChange={(e) => {
               const f = e.target.files?.[0];
               console.log('[Import] input onChange:', f?.name, f?.type);
+              if (f) { try { window.dispatchEvent(new CustomEvent('eh-diag', { detail: { type: 'file-change', file: f } })); } catch (e) {} }
               if (f) onFileSelect(f);
             }}
           />
@@ -396,3 +384,4 @@ export const FilePanel: React.FC<FilePanelProps> = ({
     </div>
   );
 };
+
