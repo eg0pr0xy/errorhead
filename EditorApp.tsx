@@ -491,18 +491,17 @@ const EditorApp: React.FC = () => {
           });
         }
       } else {
-        // No media ready yet.
-        // Only show the test pattern when nothing has been selected.
+        // No media ready yet. Keep canvas empty; do not show test pattern.
         if (!sourceTypeRef.current) {
           const width = 800;
           const height = 600;
-          
+
           if (canvasRef.current!.width !== width || canvasRef.current!.height !== height) {
             canvasRef.current!.width = width;
             canvasRef.current!.height = height;
           }
-          
-          drawTestPattern(ctx, width, height);
+
+          ctx.clearRect(0, 0, width, height);
         }
         // If a source was selected but isn't ready yet, keep the last frame to avoid flicker.
       }

@@ -29,3 +29,6 @@ Landing
 - Lightweight landing screen appears before the editor
 - Title, tagline, and primary CTA: "ENTER"
 - No audio/video preloaded on landing; media initializes after entering
+
+Canvas Behavior
+- The canvas stays blank until a media file is imported (no test pattern)
