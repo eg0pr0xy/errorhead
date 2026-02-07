@@ -43,7 +43,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         {/* Plain background video (isolated from Media Core) */}
         <video
           className="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none"
-          src="/landing.mp4"
+          src={`${import.meta.env.BASE_URL}landing.mp4`}
           muted
           autoPlay
           loop
