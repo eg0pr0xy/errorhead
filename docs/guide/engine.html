@@ -52,6 +52,105 @@
       </section>
 
       <section>
+        <h2>Effects Catalog (Current)</h2>
+        <p>These are the effects currently implemented in the engine. All are available in the UI unless noted.</p>
+
+        <h3>Core / Compression</h3>
+        <ul>
+          <li><strong>Corruption</strong>: amount, quality, iterations, seed</li>
+          <li><strong>Corrupt Mode</strong>: safe / unsafe byte corruption</li>
+        </ul>
+
+        <h3>Destruction</h3>
+        <ul>
+          <li><strong>Melt</strong></li>
+          <li><strong>Shred</strong></li>
+          <li><strong>Scatter</strong></li>
+          <li><strong>Burn</strong> (heat tint / blend influence)</li>
+          <li><strong>Shake</strong> (frame jitter)</li>
+        </ul>
+
+        <h3>Color & RGB</h3>
+        <ul>
+          <li><strong>Brightness</strong></li>
+          <li><strong>RGB Shift</strong></li>
+          <li><strong>Color Offset</strong></li>
+          <li><strong>Channel Offsets</strong>: red / green / blue shift</li>
+          <li><strong>Pixelation</strong></li>
+        </ul>
+
+        <h3>Display / Texture</h3>
+        <ul>
+          <li><strong>CRT Scanlines</strong> + intensity</li>
+          <li><strong>Noise</strong> (digital slivers)</li>
+        </ul>
+
+        <h3>Analog Sync Distortion</h3>
+        <ul>
+          <li><strong>Phase Slip</strong>: phaseSpeed, phaseOffset, phaseJitter, wrapMode, banding</li>
+          <li><strong>Analog Inertia</strong>: analogInertia (Verlet-style damping)</li>
+          <li><strong>Horizontal Drift</strong>: hOffset, hSpeed, hAmount</li>
+          <li><strong>Wave Distortion</strong>: waveAmount, waveFrequency, waveSpeed, wavePhase</li>
+          <li><strong>Vertical Sync Collapse</strong>: bandCount, baseSpeed, bandVariance, jitter, wrapMode</li>
+          <li><strong>VHS Tracking Band</strong>: strength, bandHeight, speed, position, tear</li>
+        </ul>
+
+        <h3>Additional Analog Layers</h3>
+        <ul>
+          <li><strong>Chroma Drift / Delay</strong>: chromaDelayFrames, chromaDriftAmount, chromaWobbleSpeed</li>
+          <li><strong>Slice / Stripe Displacement</strong>: sliceCount, thickness, offset, direction, hold</li>
+          <li><strong>No-Signal Snow Burst</strong>: duration, chance, intensity</li>
+        </ul>
+
+        <h3>Professional Glitch</h3>
+        <ul>
+          <li><strong>Pixel Sorting</strong>: brightness / hue / random</li>
+          <li><strong>Channel Separation</strong></li>
+        </ul>
+
+        <h3>Temporal</h3>
+        <ul>
+          <li><strong>Temporal Echo</strong></li>
+          <li><strong>Time Smear</strong></li>
+          <li><strong>Reverse Burst</strong></li>
+          <li><strong>Stutter Lock</strong></li>
+          <li><strong>Temporal Displace</strong></li>
+          <li><strong>Partial Replace</strong> (patterns + offset)</li>
+          <li><strong>Chaos</strong> (seed evolution)</li>
+        </ul>
+
+        <h3>2D Datamosh (Canvas)</h3>
+        <ul>
+          <li><strong>I-Frame / GOP</strong>: interval, bloom, soft reset</li>
+          <li><strong>Motion Vector Field</strong>: flowX/flowY/rotate/zoom</li>
+          <li><strong>Feedback</strong></li>
+          <li><strong>Macroblocks</strong>: blockList, blockSize</li>
+          <li><strong>Ref Swap</strong> + <strong>Motion Residue</strong></li>
+          <li><strong>MV Abuse</strong> (block match)</li>
+          <li><strong>History Capture Interval</strong></li>
+        </ul>
+
+        <h3>WebGL Mosh (Shader)</h3>
+        <ul>
+          <li><strong>Motion Sculpture WebGL</strong> (when moshMode = webgl)</li>
+          <li><strong>Shader Mosh</strong>: feedback, decay, warp, block size, RGB offset</li>
+          <li><strong>Displacement</strong>: strength, scale, speed, quantize</li>
+        </ul>
+
+        <h3>Audio Reactive</h3>
+        <ul>
+          <li><strong>Audio Modulation</strong>: RGB shift, amount, warp, feedback, blocks, melt, shake, noise</li>
+          <li><strong>Audio Events</strong>: freeze, reverse burst, swap, noise hit, sync kick</li>
+        </ul>
+
+        <h3>Strict Effects Layer (Optional)</h3>
+        <ul>
+          <li><strong>Invert</strong> (debug layer)</li>
+          <li><strong>Scanlines</strong> (bound to scanline intensity)</li>
+        </ul>
+      </section>
+
+      <section>
         <h2>Temporal Mosh</h2>
         <ul>
           <li><strong>masterSpeed</strong>: slow down or overcrank the feed.</li>
