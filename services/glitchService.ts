@@ -39,6 +39,10 @@ import { applyCompressionGlitch, getCompressionDebug, resetCompressionCaches } f
 import { applyPostProcessing } from './glitchEngine/post';
 import { applyAnalogPhaseSlip } from './glitchEngine/phaseSlip';
 import { applyVerticalSyncCollapse } from './glitchEngine/verticalSyncCollapse';
+import { applyVhsTrackingNoiseBand } from './glitchEngine/trackingBand';
+import { applySnowBurst } from './glitchEngine/snowBurst';
+import { applyChromaDrift } from './glitchEngine/chromaDrift';
+import { applySliceStripe } from './glitchEngine/sliceStripe';
 import { applyMotionSculptureWebGL, resetWebGLMosh, getWebGLMoshDebug } from './glitchEngine/webgl/applyMotionSculptureWebGL';
 import { applyEffectStack, setEffectStack } from './effects/stack';
 import { buildEffectsFromParams } from './effects/bind';
@@ -53,10 +57,9 @@ import {
 } from './glitchEngine/temporal';
 import {
   applyPartialFrameReplace,
-  applyAudioFrameEvents,
-  getChaosModulatedSeed,
-  resetAudioEvents
+  getChaosModulatedSeed
 } from './glitchEngine/coreEffects';
+import { audioEventDispatch, applyAudioEventHijack } from './audioEventBus';
 
 // Temporary debug overlay toggle: enable by setting window.__ERRORHEAD_DEBUG__ = true in console
 const DEBUG_OVERLAY = (typeof window !== 'undefined' && (window as any).__ERRORHEAD_DEBUG__ === true);
@@ -82,8 +85,10 @@ export const renderGlitch = async (
   height: number,
   tGlobal: number,
   audioLevel: number = 0,
-  engOpt?: EngineContext
+  engOpt?: EngineContext,
+  isPlaying: boolean = true
 ) => {
+  const playing = isPlaying !== false;
   // Debug: collect simple per-frame diagnostics
   const dbg: { media: string; mw: number; mh: number; overlayOk: boolean; pipeline: string } = {
     media: 'unknown', mw: width, mh: height, overlayOk: false, pipeline: '2d'
@@ -106,6 +111,12 @@ export const renderGlitch = async (
   const eng = engOpt ?? getGlobalEngineContext();
   const B = engOpt ? eng.buffers : globalBuffers;
   const S = engOpt ? eng.state : globalState;
+  const stateAny = S as any;
+  const prevT = typeof stateAny.lastTGlobal === 'number' ? stateAny.lastTGlobal : tGlobal;
+  const dtSec = Math.max(0, (typeof window !== 'undefined' && (window as any).__ERRORHEAD_FIXED_DT) ? (window as any).__ERRORHEAD_FIXED_DT : (tGlobal - prevT));
+  stateAny.lastTGlobal = tGlobal;
+  const eventFrame = typeof stateAny.audioEventFrame === 'number' ? (stateAny.audioEventFrame + 1) : 0;
+  stateAny.audioEventFrame = eventFrame;
   const { inCtx, compCtx, moshCtx, swapCtx } = engOpt ? getContextsFromEng(eng) : getGlobalContexts();
   Object.values(B as any).forEach((c: HTMLCanvasElement) => {
     if (c.width !== width || c.height !== height) {
@@ -116,9 +127,13 @@ export const renderGlitch = async (
 
   // 2. Audio Modulation Pass — CONTROL VOLTAGE SYSTEM
   let params = { ...baseParams };
+  let audioFeatures: { amplitude: number; envelope: number; low: number; mid: number; high: number; transient: number; beat: number } | null = null;
   if (params.audioEnabled) {
     const { audioService } = await import('./audioService');
-    const features = audioService.getFeatures();
+    audioFeatures = audioService.getFeatures();
+  }
+  if (params.audioEnabled && !params.audioModulationBypass && audioFeatures) {
+    const features = audioFeatures;
     
     // Select feature based on user preference
     const featureMap = {
@@ -156,10 +171,36 @@ export const renderGlitch = async (
 
     const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
     const addMod = (base: number, add: number, min: number, max: number) => {
-      const next = base + add;
-      const minClamp = base > 0 ? base : min;
-      return clamp(next, minClamp, max);
+      const baseVal = Number.isFinite(base) ? base : 0;
+      const next = baseVal + add;
+      return clamp(next, min, max);
     };
+
+    // Audio frequency mapping for Analog Sync Distortion
+    const applyCV = (v: number) => {
+      let out = Math.max(0, Math.min(1, v));
+      if (out < gate) out = 0;
+      else out = (out - gate) / (1 - gate);
+      if (params.audioInvert) out = 1 - out;
+      if (params.audioQuantize && params.audioQuantize > 0) {
+        const steps = Math.floor(params.audioQuantize);
+        out = Math.floor(out * steps) / steps;
+      }
+      out = Math.min(1.0, out * (params.audioGain / 50));
+      return out;
+    };
+
+    if (params.phaseEnabled) {
+      const bassCv = applyCV((features.low * 0.7) + (features.envelope * 0.3));
+      const highCv = applyCV(features.high);
+      params.phaseSpeed = addMod(baseParams.phaseSpeed ?? 0, bassCv * 0.6, 0, 10);
+      params.phaseSpeedX = addMod(baseParams.phaseSpeedX ?? 0, highCv * 0.9, 0, 10);
+    }
+
+    if (params.vSyncEnabled) {
+      const peakCv = applyCV(features.transient);
+      params.vSyncBandVariance = addMod(baseParams.vSyncBandVariance ?? 0, peakCv * 2.5, 0, 10);
+    }
     
     // Apply modulation to targets (depth controls intensity)
     if (params.audioTargetRgb > 0) {
@@ -209,6 +250,32 @@ export const renderGlitch = async (
   }
   else {
     audioCvSmooth = 0;
+  }
+
+  // 2.5 Audio Events (parameter overrides only; time-bound, additive)
+  let snowPeak = 0;
+  let activeAudioEvents: any[] = [];
+  if (params.audioEnabled && params.audioEventEnable && audioFeatures) {
+    const dispatch = audioEventDispatch(eng, params, audioFeatures, eventFrame);
+    snowPeak = dispatch.snowPeak;
+    activeAudioEvents = dispatch.events || [];
+    const overrides = dispatch.overrides;
+    if (overrides && Object.keys(overrides).length > 0) {
+      const next: GlitchParams = { ...params };
+      for (const [k, v] of Object.entries(overrides)) {
+        if (typeof v === 'number') {
+          const cur = (next as any)[k];
+          const base = Number.isFinite(cur) ? cur : 0;
+          (next as any)[k] = base + v;
+        } else if (typeof v === 'boolean') {
+          const cur = (next as any)[k];
+          (next as any)[k] = !!cur || v;
+        } else if (typeof v === 'string') {
+          (next as any)[k] = v;
+        }
+      }
+      params = next;
+    }
   }
 
   // 3. Input Processing
@@ -284,7 +351,18 @@ export const renderGlitch = async (
     }
   } else {
     S.frameCounter = 0;
-    S.historyFrames.length = 0;
+    const needsHistory = (
+      (params.temporalEcho && params.temporalEcho > 0) ||
+      (params.timeSmear && params.timeSmear > 0) ||
+      (params.temporalDisplace && params.temporalDisplace > 0) ||
+      (params.reverseBurst && params.reverseBurst > 0) ||
+      (params.stutterLock && params.stutterLock > 0) ||
+      (params.partialReplace && params.partialReplace > 0) ||
+      (params.audioEnabled && params.audioEventEnable)
+    );
+    if (!needsHistory) {
+      S.historyFrames.length = 0;
+    }
   }
 
   // 5. Destruction Pipeline
@@ -292,7 +370,8 @@ export const renderGlitch = async (
   compCtx.drawImage(moshedSource, 0, 0, width, height);
 
   if (params.pixelation > 0) {
-    const f = Math.max(0.01, 1 - (params.pixelation / 20));
+    const t = Math.max(0, Math.min(1, params.pixelation / 20));
+    const f = Math.max(0.02, 1 - Math.pow(t, 0.65));
     const w = Math.floor(width * f);
     const h = Math.floor(height * f);
     swapCtx.save();
@@ -323,11 +402,39 @@ export const renderGlitch = async (
   // 7. Post Processing
   applyPostProcessing(ctx, compressedSource, params, width, height, tGlobal);
 
+  // 7.1. Shake (optional)
+  if (params.shake > 0) {
+    const amp = Math.max(0, Math.min(100, params.shake)) / 100;
+    const dx = Math.sin(tGlobal * 40.0) * (width * 0.02 * amp);
+    const dy = Math.cos(tGlobal * 33.0) * (height * 0.02 * amp);
+    swapCtx.save();
+    swapCtx.clearRect(0, 0, width, height);
+    swapCtx.drawImage(ctx.canvas, 0, 0, width, height);
+    ctx.save();
+    ctx.clearRect(0, 0, width, height);
+    for (const ox of [dx, dx - width, dx + width]) {
+      for (const oy of [dy, dy - height, dy + height]) {
+        ctx.drawImage(swapCtx.canvas, ox, oy, width, height);
+      }
+    }
+    ctx.restore();
+    swapCtx.restore();
+  }
+
   // 7.2. Analog Phase Slip (optional)
-  applyAnalogPhaseSlip(ctx, swapCtx, params, width, height, tGlobal);
+  applyAnalogPhaseSlip(ctx, swapCtx, params, width, height, tGlobal, playing);
 
   // 7.2.1. Vertical Sync Collapse (optional)
-  applyVerticalSyncCollapse(ctx, swapCtx, params, width, height);
+  applyVerticalSyncCollapse(ctx, swapCtx, params, width, height, playing);
+
+  // 7.2.2. VHS Tracking Noise Band (optional)
+  applyVhsTrackingNoiseBand(ctx, swapCtx, params, width, height, tGlobal, playing);
+
+  // 7.2.3. Chroma Drift / Delay (optional)
+  applyChromaDrift(ctx, params, width, height, tGlobal, playing);
+
+  // 7.2.4. Slice / Stripe Displacement (optional)
+  applySliceStripe(ctx, swapCtx, params, width, height, playing);
 
   // 7.3. PROFESSIONAL GLITCH EFFECTS (Pixel-level operations)
   // Pixel Sorting - professional glitch aesthetic
@@ -354,29 +461,26 @@ export const renderGlitch = async (
   }
 
   // 7.4. PHASE 1 CORE EFFECTS
-  
-  // Audio-Triggered Frame Events (CRITICAL: Discrete events, can hijack frame)
+
+  // Audio Events Layer (trigger-based; frame hijack)
   let audioEventHijack = false;
-  if (params.audioEnabled && params.audioEventEnable) {
-    const { audioService } = await import('./audioService');
-    const features = audioService.getFeatures();
-    
-    audioEventHijack = applyAudioFrameEvents(
-      eng,
-      ctx,
-      features,
-      params.audioEventThreshold || 70,
-      params.audioEventAction || 'freeze',
-      params.audioEventDuration || 10,
-      width,
-      height,
-      S.frameCounter
-    );
+  if (params.audioEnabled && params.audioEventEnable && activeAudioEvents.length > 0) {
+    audioEventHijack = applyAudioEventHijack(eng, ctx, activeAudioEvents, width, height, eventFrame);
+  }
+
+  // 7.4.1. No-Signal Snow Burst (event)
+  let snowHijack = false;
+  if (params.snowBurstEnabled) {
+    let peak = snowPeak;
+    if (peak === 0 && params.audioEnabled && audioFeatures) {
+      peak = Math.max(audioFeatures.transient, audioFeatures.beat);
+    }
+    snowHijack = applySnowBurst(eng, ctx, params, width, height, dtSec, peak);
   }
   
   // 7.5. TEMPORAL EFFECTS LAYER (Time-based glitches)
   // Check for frame-hijacking effects first (reverse burst, stutter lock)
-  let temporalHijack = audioEventHijack; // Audio events take priority
+  let temporalHijack = audioEventHijack || snowHijack; // events take priority
   
   if (params.reverseBurst && params.reverseBurst > 0) {
     temporalHijack = applyReverseBurst(
@@ -502,6 +606,19 @@ export const renderGlitch = async (
     } catch (e) {
       // Non-fatal: strict layer must never break base rendering
       try { console.warn('[Effects] strict layer failed; continuing', e); } catch {}
+    }
+  }
+
+  // 8.7. History capture for temporal effects (when not already captured in 2D mosh path)
+  if (!params.moshEnabled || params.moshMode === 'webgl') {
+    const captureInterval = params.historyCaptureInterval ?? 1;
+    if (captureInterval > 0 && (eventFrame % captureInterval === 0)) {
+      const snapshot = document.createElement('canvas');
+      snapshot.width = width;
+      snapshot.height = height;
+      snapshot.getContext('2d')?.drawImage(ctx.canvas, 0, 0, width, height);
+      S.historyFrames.push(snapshot);
+      if (S.historyFrames.length > MAX_HISTORY) S.historyFrames.shift();
     }
   }
 

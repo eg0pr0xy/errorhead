@@ -1,7 +1,8 @@
 import { GlitchParams } from '../../types';
 
-// Persistent phase accumulator (module scope)
-let phaseAcc = 0;
+// Persistent phase accumulators (module scope)
+let phaseAccY = 0;
+let phaseAccX = 0;
 let hAcc = 0;
 let waveAcc = 0;
 
@@ -18,11 +19,14 @@ export function applyAnalogPhaseSlip(
   params: GlitchParams,
   width: number,
   height: number,
-  tGlobal: number
+  tGlobal: number,
+  isPlaying: boolean = true
 ) {
   const phaseEnabled = params.phaseEnabled ?? false;
   const phaseOffset = params.phaseOffset ?? 0;
   const phaseSpeed = params.phaseSpeed ?? 0;
+  const phaseOffsetX = params.phaseOffsetX ?? 0;
+  const phaseSpeedX = params.phaseSpeedX ?? 0;
   const phaseJitter = params.phaseJitter ?? 0;
   const wrapMode = params.wrapMode ?? 'hard';
   const banding = params.banding ?? 'line';
@@ -38,6 +42,8 @@ export function applyAnalogPhaseSlip(
   if (
     phaseOffset === 0 &&
     phaseSpeed === 0 &&
+    phaseOffsetX === 0 &&
+    phaseSpeedX === 0 &&
     phaseJitter === 0 &&
     hOffset === 0 &&
     hSpeed === 0 &&
@@ -48,11 +54,16 @@ export function applyAnalogPhaseSlip(
     wavePhase === 0
   ) return;
 
-  phaseAcc += phaseSpeed;
-  hAcc += hSpeed;
-  waveAcc += waveSpeed;
-  const totalOffset = phaseOffset + phaseAcc;
-  const baseShift = ((totalOffset % height) + height) % height;
+  if (isPlaying) {
+    phaseAccY += phaseSpeed;
+    phaseAccX += phaseSpeedX;
+    hAcc += hSpeed;
+    waveAcc += waveSpeed;
+  }
+  const totalOffsetY = phaseOffset + phaseAccY;
+  const baseShiftY = ((totalOffsetY % height) + height) % height;
+  const totalOffsetX = phaseOffsetX + phaseAccX;
+  const baseShiftX = ((totalOffsetX % width) + width) % width;
   const bandHeight = banding === 'block' ? Math.max(2, Math.round(height / 120)) : 1;
   const soft = wrapMode === 'soft';
   const baseAlpha = soft ? 0.85 : 1.0;
@@ -109,12 +120,12 @@ export function applyAnalogPhaseSlip(
     const seed = y * 0.013 + tGlobal * 0.7;
     const r = Math.sin(seed * 12.9898) * 43758.5453;
     const jitter = phaseJitter ? ((r - Math.floor(r)) - 0.5) * 2 * phaseJitter : 0;
-    const srcY = (y + baseShift + jitter) % height;
+    const srcY = (y + baseShiftY + jitter) % height;
     const hFreq = (Math.PI * 2) / Math.max(8, bandHeight * 8);
-    const hPhase = hAcc + phaseAcc + hOffset;
+    const hPhase = hAcc + phaseAccY + hOffset;
     const hShift = hAmount !== 0 ? Math.sin(y * hFreq + hPhase) * hAmount : 0;
     const wave = waveAmount !== 0 ? Math.sin(y * waveFrequency + wavePhase + waveAcc) * waveAmount : 0;
-    const xOffset = hShift + wave;
+    const xOffset = baseShiftX + hShift + wave;
     drawWrapped(srcY, y, Math.min(bandHeight, height - y), xOffset);
   }
 

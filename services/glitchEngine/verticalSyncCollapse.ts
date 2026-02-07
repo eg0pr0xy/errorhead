@@ -34,7 +34,8 @@ export function applyVerticalSyncCollapse(
   swapCtx: CanvasRenderingContext2D,
   params: GlitchParams,
   width: number,
-  height: number
+  height: number,
+  isPlaying: boolean = true
 ) {
   const enabled = params.vSyncEnabled ?? false;
   if (!enabled) return;
@@ -49,7 +50,7 @@ export function applyVerticalSyncCollapse(
   if (baseSpeed === 0 && bandVariance === 0 && jitter === 0) return;
 
   ensureBands(bandCount);
-  jitterAcc += 1;
+  if (isPlaying) jitterAcc += 1;
 
   // Snapshot current frame into swap buffer (no clear on ctx)
   swapCtx.drawImage(ctx.canvas, 0, 0, width, height);
@@ -96,7 +97,7 @@ export function applyVerticalSyncCollapse(
     const bandHeight = Math.max(1, bandEnd - bandStart);
 
     const speed = baseSpeed + bandVariance * bandSpeedOffset[i];
-    bandPhaseAcc[i] += speed;
+    if (isPlaying) bandPhaseAcc[i] += speed;
     let offset = bandPhaseAcc[i];
 
     if (jitter !== 0) {

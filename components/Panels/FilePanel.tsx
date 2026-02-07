@@ -8,10 +8,9 @@ interface FilePanelProps {
   onFileSelect: (file: File) => void;
   onPresetSelect: (preset: Preset) => void;
   activePresetId?: string;
-  exportFormat: 'png' | 'jpeg';
-  setExportFormat: (f: 'png' | 'jpeg') => void;
   exportQuality: number;
   setExportQuality: (q: number) => void;
+  onExportImage: (format: 'png' | 'jpeg') => void;
   onExport: (isVideo: boolean, durationSec?: number) => void;
   isVideo?: boolean;
   isAnimationActive: boolean;
@@ -44,10 +43,9 @@ export const FilePanel: React.FC<FilePanelProps> = ({
   onFileSelect, 
   onPresetSelect, 
   activePresetId,
-  exportFormat,
-  setExportFormat,
   exportQuality,
   setExportQuality,
+  onExportImage,
   onExport,
   isVideo,
   isAnimationActive,
@@ -290,39 +288,36 @@ export const FilePanel: React.FC<FilePanelProps> = ({
              <div className="flex flex-col gap-3 animate-in fade-in duration-200">
                 <div className="flex gap-2">
                     <Button 
-                      variant={exportFormat === 'png' ? 'primary' : 'secondary'} 
+                      variant="primary" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => setExportFormat('png')}
+                      onClick={() => onExportImage('png')}
+                      icon={<Icons.Camera />}
                     >
-                      PNG
+                      EXPORT PNG
                     </Button>
                     <Button 
-                      variant={exportFormat === 'jpeg' ? 'primary' : 'secondary'} 
+                      variant="secondary" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => setExportFormat('jpeg')}
+                      onClick={() => onExportImage('jpeg')}
+                      icon={<Icons.Camera />}
                     >
-                      JPG
+                      EXPORT JPG
                     </Button>
                 </div>
 
-                {exportFormat === 'jpeg' && (
-                  <div className="animate-in fade-in duration-200">
-                      <Slider 
-                        label="QUALITY" 
-                        value={exportQuality} 
-                        min={10} 
-                        max={100} 
-                        onChange={(e) => setExportQuality(Number(e.target.value))}
-                      />
-                  </div>
-                )}
+                <div className="animate-in fade-in duration-200">
+                    <Slider 
+                      label="JPG QUALITY" 
+                      value={exportQuality} 
+                      min={10} 
+                      max={100} 
+                      onChange={(e) => setExportQuality(Number(e.target.value))}
+                    />
+                </div>
 
                 <div className="flex gap-2">
-                  <Button variant="primary" onClick={() => onExport(false)} icon={<Icons.Camera />}>
-                    SNAPSHOT
-                  </Button>
                   <Button 
                     variant={isSeqActive ? 'danger' : 'secondary'}
                     onClick={() => (isSeqActive ? onStopPngSeq() : onStartPngSeq(seqFps, seqFrames))}

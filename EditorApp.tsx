@@ -61,11 +61,11 @@ const EditorApp: React.FC = () => {
   const [sourceType, setSourceType] = useState<'image' | 'video' | null>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [fileName, setFileName] = useState<string>('');
-  const [exportFormat, setExportFormat] = useState<'png' | 'jpeg'>('png');
   const [exportQuality, setExportQuality] = useState<number>(90);
   const [isRecording, setIsRecording] = useState(false);
   const [fps, setFps] = useState(0);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const lastObjectUrlRef = useRef<string | null>(null);
   // Recording options
   const [recordFormat, setRecordFormat] = useState<'auto' | 'webm' | 'mp4'>('auto');
@@ -107,6 +107,9 @@ const EditorApp: React.FC = () => {
   const sourceTypeRef = useRef(sourceType);
   const isVideoPlayingRef = useRef(isVideoPlaying);
   const animationModeRef = useRef(animationMode);
+  const isPlayingRef = useRef(isPlaying);
+  const wasVideoPlayingRef = useRef(false);
+  const videoAudioStateRef = useRef<{ muted: boolean; volume: number } | null>(null);
   
   const tGlobalRef = useRef(0);
   const lastTimeRef = useRef<number>(0);
@@ -154,6 +157,11 @@ const EditorApp: React.FC = () => {
     toastTimerRef.current = window.setTimeout(() => setToast(null), 3000);
   };
 
+  const setPlaying = (next: boolean) => {
+    isPlayingRef.current = next;
+    setIsPlaying(next);
+  };
+
   // Sync Refs
   useEffect(() => { paramsRef.current = params; }, [params]);
   useEffect(() => { animStateRef.current = animState; }, [animState]);
@@ -161,10 +169,31 @@ const EditorApp: React.FC = () => {
   useEffect(() => { sourceTypeRef.current = sourceType; }, [sourceType]);
   useEffect(() => { isVideoPlayingRef.current = isVideoPlaying; }, [isVideoPlaying]);
   useEffect(() => { animationModeRef.current = animationMode; }, [animationMode]);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+
+  // Pause/resume video element when global playback is toggled
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || sourceTypeRef.current !== 'video') return;
+    if (!isPlaying) {
+      wasVideoPlayingRef.current = !video.paused;
+      if (!video.paused) video.pause();
+    } else if (wasVideoPlayingRef.current) {
+      video.play().catch(() => {});
+      wasVideoPlayingRef.current = false;
+    }
+  }, [isPlaying, sourceType]);
 
   // Audio Logic: Dynamic Routing (playback persists across preset/effect changes)
   useEffect(() => {
     if (!params.audioEnabled) {
+      // Restore video audio state if we changed it for analysis
+      const video = videoRef.current;
+      if (video && videoAudioStateRef.current) {
+        video.muted = videoAudioStateRef.current.muted;
+        video.volume = videoAudioStateRef.current.volume;
+        videoAudioStateRef.current = null;
+      }
       // Do not stop playback here; modulation can be disabled independently.
       return;
     }
@@ -174,6 +203,14 @@ const EditorApp: React.FC = () => {
     if (params.audioSource === 'mic') {
       audioService.connectMic().then(() => addLog('Audio: Mic Online')).catch(() => addLog('Audio: Mic Access Denied'));
     } else if (params.audioSource === 'video' && videoRef.current) {
+      const video = videoRef.current;
+      if (video && !videoAudioStateRef.current) {
+        videoAudioStateRef.current = { muted: video.muted, volume: video.volume };
+      }
+      if (video) {
+        video.muted = false;
+        if (video.volume < 0.2) video.volume = 0.4;
+      }
       audioService.connectMedia(videoRef.current);
       addLog('Audio: Tapped Video Stream');
     } else if (params.audioSource === 'music' && params.musicUrl) {
@@ -227,6 +264,18 @@ const EditorApp: React.FC = () => {
       try {
         const result = await loadVideoTo(video, canvasRef.current, file, lastObjectUrlRef);
         addLog(`Video ready: ${result.width}x${result.height}`);
+        if (!isPlayingRef.current) {
+          try { video.pause(); } catch {}
+        }
+        if (paramsRef.current.audioEnabled && paramsRef.current.audioSource === 'video') {
+          if (!videoAudioStateRef.current) {
+            videoAudioStateRef.current = { muted: video.muted, volume: video.volume };
+          }
+          video.muted = false;
+          if (video.volume < 0.2) video.volume = 0.4;
+          audioService.connectMedia(video);
+          addLog('Audio: Tapped Video Stream');
+        }
       } catch (err) {
         console.error('[Import] Video load error:', err);
         addLog('Video load error');
@@ -286,6 +335,7 @@ const EditorApp: React.FC = () => {
 
   const applyPreset = (preset: Preset) => {
     setParams(prev => ({
+      ...DEFAULT_PARAMS,
       ...preset.params,
       // Preserve playback state across preset changes
       audioEnabled: prev.audioEnabled,
@@ -297,6 +347,7 @@ const EditorApp: React.FC = () => {
 
   const applyImportedPreset = (presetParams: GlitchParams) => {
     setParams(prev => ({
+      ...DEFAULT_PARAMS,
       ...presetParams,
       // Preserve playback state across preset changes
       audioEnabled: prev.audioEnabled,
@@ -393,9 +444,11 @@ const EditorApp: React.FC = () => {
 
       const fixedDt = (typeof window !== 'undefined') ? (window as any).__ERRORHEAD_FIXED_DT as number : undefined;
       const safeDelta = Number.isFinite(fixedDt) && fixedDt! > 0 ? fixedDt! : Math.min(delta, 0.1);
-      tGlobalRef.current += safeDelta * paramsRef.current.masterSpeed;
+      const paused = !isPlayingRef.current;
+      const effectiveDelta = paused ? 0 : safeDelta;
+      tGlobalRef.current += effectiveDelta * paramsRef.current.masterSpeed;
 
-      if (animationModeRef.current && animStateRef.current.isPlaying) {
+      if (!paused && animationModeRef.current && animStateRef.current.isPlaying) {
          let nextTime = animStateRef.current.currentTime + safeDelta;
          if (nextTime > animStateRef.current.duration) nextTime = 0;
          setAnimState(prev => ({ ...prev, currentTime: nextTime }));
@@ -463,7 +516,7 @@ const EditorApp: React.FC = () => {
         // EFFECT PIPELINE (currently disabled for stability)
         const audioLevel = audioService.getLevel();
         if (EFFECTS_ENABLED) { 
-          await renderGlitch(ctx, source, paramsRef.current, outW, outH, tGlobalRef.current, audioLevel); 
+          await renderGlitch(ctx, source, paramsRef.current, outW, outH, tGlobalRef.current, audioLevel, undefined, isPlayingRef.current); 
         }
 
         // PNG sequence capture
@@ -566,10 +619,29 @@ const EditorApp: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const exportImage = async () => {
+  const withPlaybackPaused = async (fn: () => Promise<void>) => {
+    const wasPaused = !isPlayingRef.current;
+    if (!wasPaused) setPlaying(false);
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    await fn();
+    if (!wasPaused) setPlaying(true);
+  };
+
+  const renderOnce = async () => {
+    // Wait for any in-flight render to finish
+    for (let i = 0; i < 3 && isRenderingRef.current; i++) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    }
+    await renderFrame(performance.now());
+  };
+
+  const exportImage = async (format: 'png' | 'jpeg') => {
     const canvas = canvasRef.current; if (!canvas) return;
-    await exportCanvasImage(canvas, { format: exportFormat, quality: exportQuality, fileNameBase: fileName });
-    showToast('Saved image');
+    await withPlaybackPaused(async () => {
+      await renderOnce();
+      await exportCanvasImage(canvas, { format, quality: exportQuality, fileNameBase: fileName });
+    });
+    showToast(`Saved ${format.toUpperCase()}`);
   };
 
   const stopRecording = () => stopCanvasRecording({ recorderRef, recordChunksRef, recordStreamRef, recordTimerRef, setIsRecording });
@@ -591,8 +663,6 @@ const EditorApp: React.FC = () => {
   const handleExport = (isVideo: boolean, durationSec?: number) => {
     if (isVideo) {
       startRecording(durationSec);
-    } else {
-      exportImage();
     }
   };
 
@@ -632,10 +702,9 @@ const EditorApp: React.FC = () => {
             onFileSelect={handleFileSelect}
             onPresetSelect={applyPreset}
             activePresetId={activePresetId}
-            exportFormat={exportFormat}
-            setExportFormat={setExportFormat}
             exportQuality={exportQuality}
             setExportQuality={setExportQuality}
+            onExportImage={exportImage}
             onExport={handleExport}
             isVideo={sourceType === 'video'}
             isAnimationActive={animationMode}
@@ -694,6 +763,8 @@ const EditorApp: React.FC = () => {
             onAddKeyframe={handleAddKeyframe}
             onDeleteKeyframe={handleDeleteKeyframe}
             onDurationChange={(d) => setAnimState(p => ({ ...p, duration: d }))}
+            isPlaying={isPlaying}
+            onTogglePlayback={() => setPlaying(!isPlayingRef.current)}
             fps={fps}
           />
         }

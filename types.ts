@@ -106,6 +106,12 @@ export interface GlitchParams {
   temporalDisplaceRegions?: number;// 1-20: Number of displaced regions
   temporalDisplaceOffset?: number; // 1-30: Max frame offset for displacement
   
+  // No-Signal Snow Burst
+  snowBurstEnabled?: boolean;
+  snowBurstDurationFrames?: number;
+  snowBurstChance?: number; // chance per second (0-100)
+  snowBurstIntensity?: number; // 0-100
+  
   // Phase 1 Core Effects
   partialReplace?: number;         // 0-100: Partial frame replacement intensity
   partialReplacePattern?: 'random' | 'bands' | 'blocks' | 'gradient'; // Replacement pattern
@@ -124,12 +130,30 @@ export interface GlitchParams {
   moshWarp: number;
   moshBlockSize: number;
   moshRGBOffset: number;
+
+  // Motion Sculpture Mask (optional, WebGL mosh only)
+  sculptMask?: number;       // 0..1: blend factor for masked motion
+  sculptThreshold?: number;  // 0..1: luma threshold
+  sculptSoftness?: number;   // 0..1: threshold softness
   
   // Displacement Noise
   moshDispStrength: number;
   moshDispScale: number;
   moshDispSpeed: number;
   moshDispQuantize: number;
+
+  // Chroma Drift / Delay (optional)
+  chromaDelayFrames?: number;
+  chromaDriftAmount?: number;
+  chromaWobbleSpeed?: number;
+
+  // Slice / Stripe Displacement (optional)
+  sliceEnabled?: boolean;
+  sliceCount?: number;
+  sliceThickness?: number;
+  sliceOffsetMax?: number;
+  sliceDirection?: 'h' | 'v' | 'both';
+  sliceHoldFrames?: number;
 
   // Audio Reactivity — Control Voltage System
   audioEnabled: boolean;
@@ -154,7 +178,8 @@ export interface GlitchParams {
   // Advanced Modulation Options
   audioInvert?: boolean;          // Invert modulation signal
   audioQuantize?: number;         // Step quantization (0 = smooth, higher = stepped)
-  
+  audioModulationBypass?: boolean; // Debug: bypass audio modulation math
+
   musicUrl?: string;              // Blob URL for separate music track
 
   // Compression Corruption Mode
@@ -167,6 +192,8 @@ export interface GlitchParams {
   phaseEnabled?: boolean;
   phaseOffset?: number;
   phaseSpeed?: number;
+  phaseOffsetX?: number;
+  phaseSpeedX?: number;
   phaseJitter?: number;
   wrapMode?: 'hard' | 'soft';
   banding?: 'line' | 'block';
@@ -186,6 +213,14 @@ export interface GlitchParams {
   vSyncBandVariance?: number;
   vSyncJitter?: number;
   vSyncWrapMode?: 'hard' | 'soft';
+
+  // VHS Tracking Noise Band (optional)
+  trackingEnabled?: boolean;
+  trackingStrength?: number;
+  trackingBandHeight?: number;
+  trackingSpeed?: number;
+  trackingPosition?: 'top' | 'bottom' | 'auto';
+  trackingTearAmount?: number;
 }
 
 export interface Preset {

@@ -65,6 +65,18 @@ export const applyPostProcessing = (
       ctx.fillRect(nx, ny, nw, 1);
     }
   }
+
+  // Burn (standalone heat tint when no other destruction is active)
+  const burn = Math.max(0, Math.min(100, params.burn)) / 100;
+  const hasDestruction = (params.melt > 0) || (params.scatter > 0);
+  if (burn > 0 && !hasDestruction) {
+    ctx.save();
+    ctx.globalCompositeOperation = burn > 0.5 ? 'hard-light' : 'overlay';
+    ctx.globalAlpha = 0.08 + burn * 0.25;
+    ctx.fillStyle = '#ff6a00';
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
 };
 
 

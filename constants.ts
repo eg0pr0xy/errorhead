@@ -78,6 +78,12 @@ export const DEFAULT_PARAMS: GlitchParams = {
   temporalDisplaceRegions: 8,
   temporalDisplaceOffset: 15,
   
+  // No-Signal Snow Burst (off by default)
+  snowBurstEnabled: false,
+  snowBurstDurationFrames: 6,
+  snowBurstChance: 0,
+  snowBurstIntensity: 60,
+  
   // Phase 1 Core Effects
   partialReplace: 0,
   partialReplacePattern: 'random',
@@ -100,12 +106,29 @@ export const DEFAULT_PARAMS: GlitchParams = {
   moshWarp: 10,
   moshBlockSize: 30,
   moshRGBOffset: 5,
+  // Motion Sculpture Mask (off by default)
+  sculptMask: 0,
+  sculptThreshold: 0.5,
+  sculptSoftness: 0.2,
   
   // Displacement Defaults
   moshDispStrength: 0,
   moshDispScale: 10, 
   moshDispSpeed: 5, 
   moshDispQuantize: 0,
+
+  // Chroma Drift / Delay (off by default)
+  chromaDelayFrames: 0,
+  chromaDriftAmount: 0,
+  chromaWobbleSpeed: 0,
+
+  // Slice / Stripe Displacement (off by default)
+  sliceEnabled: false,
+  sliceCount: 0,
+  sliceThickness: 0,
+  sliceOffsetMax: 0,
+  sliceDirection: 'h',
+  sliceHoldFrames: 0,
 
   // Audio Reactivity — Control Voltage System
   audioEnabled: false,
@@ -124,6 +147,7 @@ export const DEFAULT_PARAMS: GlitchParams = {
   audioTargetNoise: 0,
   audioInvert: false,
   audioQuantize: 0,
+  audioModulationBypass: false,
   // Compression safety
   corruptMode: 'safe',
   // Optional strict effects layer (post-processing)
@@ -133,6 +157,8 @@ export const DEFAULT_PARAMS: GlitchParams = {
   phaseEnabled: false,
   phaseOffset: 0,
   phaseSpeed: 0,
+  phaseOffsetX: 0,
+  phaseSpeedX: 0,
   phaseJitter: 0,
   wrapMode: 'hard',
   banding: 'line',
@@ -152,10 +178,23 @@ export const DEFAULT_PARAMS: GlitchParams = {
   vSyncBandVariance: 0,
   vSyncJitter: 0,
   vSyncWrapMode: 'hard',
+
+  // VHS Tracking Noise Band (off by default)
+  trackingEnabled: false,
+  trackingStrength: 0,
+  trackingBandHeight: 0,
+  trackingSpeed: 0,
+  trackingPosition: 'auto',
+  trackingTearAmount: 0,
 };
 
 export const APP_VERSION = 'v2.1.0';
 
+// WARNING:
+// Presets are creative surface definitions.
+// They must never be removed, replaced, normalized, or adapted
+// to audio modulation or engine changes.
+// Only additive changes are allowed.
 export const PRESETS: Preset[] = [
   {
     id: 'default',
@@ -166,19 +205,23 @@ export const PRESETS: Preset[] = [
     id: 'audio-reactive-glitch',
     name: 'SONIC ENTROPY (AUDIO)',
     params: {
-        ...DEFAULT_PARAMS,
-        audioEnabled: true,
-        audioSource: 'mic',
-        audioGain: 80,
-        amount: 5,
-        rgbShift: 2,
-        moshEnabled: true,
-        moshMode: 'webgl',
-        feedback: 95,
-        moshWarp: 5,
-        audioTargetWarp: 100,
-        audioTargetRgb: 80,
-        audioTargetAmount: 40
+      ...DEFAULT_PARAMS,
+      audioEnabled: true,
+      audioSource: 'mic',
+      audioGain: 120,
+      audioGate: 5,
+      audioSmooth: 25,
+      audioFeature: 'low',
+      amount: 5,
+      rgbShift: 4,
+      moshEnabled: true,
+      moshMode: 'webgl',
+      feedback: 95,
+      moshWarp: 10,
+      audioTargetWarp: 150,
+      audioTargetRgb: 60,
+      audioTargetAmount: 60,
+      audioTargetNoise: 20
     }
   },
   {
@@ -188,13 +231,16 @@ export const PRESETS: Preset[] = [
         ...DEFAULT_PARAMS,
         moshEnabled: true,
         moshMode: 'webgl',
-        feedback: 98,
-        moshInjection: 0.05,
+        feedback: 92,
+        moshInjection: 0.12,
         moshWarp: 40,
         flowX: 2,
         flowRotate: 1,
         noise: 20,
-        rgbShift: 10
+        rgbShift: 10,
+        sculptMask: 1,
+        sculptThreshold: 0.45,
+        sculptSoftness: 0.2
     }
   },
   {
@@ -252,17 +298,21 @@ export const PRESETS: Preset[] = [
     name: 'SLOW DRIFT',
     params: {
       ...DEFAULT_PARAMS,
-      moshEnabled: true,
-      moshMode: 'webgl',
-      masterSpeed: 0.8,
-      feedback: 95,
-      moshInjection: 0.02,
-      moshWarp: 20,
-      flowX: 1,
-      flowY: 0.5,
-      rgbShift: 5,
-      timeScaleMosh: 0.5,
-      amount: 0,
+      phaseEnabled: true,
+      phaseSpeed: 0.08,
+      phaseOffset: 2,
+      phaseJitter: 0.4,
+      wrapMode: 'soft',
+      banding: 'line',
+      hAmount: 2,
+      hSpeed: 0.04,
+      waveAmount: 2,
+      waveFrequency: 0.008,
+      waveSpeed: 0.03,
+      scanlines: true,
+      scanlineIntensity: 12,
+      noise: 5,
+      amount: 0
     }
   },
   {
@@ -394,6 +444,8 @@ export const PRESETS: Preset[] = [
       phaseEnabled: true,
       phaseSpeed: 0.12,
       phaseOffset: 5,
+      phaseSpeedX: 0.03,
+      phaseOffsetX: 0,
       phaseJitter: 0.2,
       wrapMode: 'soft',
       banding: 'line',
@@ -425,5 +477,75 @@ export const PRESETS: Preset[] = [
       pixelSort: 0,
       channelSep: 0
     }
+  },
+  // --- added presets (non-destructive extension) ---
+  {
+    id: 'culprit-pixel',
+    name: 'CULPRIT PIXEL',
+    params: {
+      ...DEFAULT_PARAMS,
+      // Pixel sorting + chroma drift character
+      pixelSort: 55,
+      pixelSortMode: 'brightness',
+      channelSep: 20,
+      channelSepX: 12,
+      channelSepY: 2,
+      pixelation: 2,
+
+      // Chroma drift / delay
+      chromaDelayFrames: 2,
+      chromaDriftAmount: 6,
+      chromaWobbleSpeed: 0.8,
+
+      // Slice displacement (subtle)
+      sliceEnabled: true,
+      sliceCount: 8,
+      sliceThickness: 12,
+      sliceOffsetMax: 40,
+      sliceDirection: 'h',
+      sliceHoldFrames: 2,
+
+      // Display texture
+      scanlines: true,
+      scanlineIntensity: 12,
+      noise: 6
+    }
+  },
+  {
+    id: 'sickfried',
+    name: 'SICKFRIED',
+    params: {
+      ...DEFAULT_PARAMS,
+      // 2D mosh core
+      moshEnabled: true,
+      moshMode: '2d',
+      iframeInterval: 30,
+      feedback: 92,
+      flowX: 2,
+      flowY: 1,
+      flowRotate: 0,
+      flowZoom: 0,
+      blockList: 55,
+      blockSize: 32,
+      refSwap: 20,
+      motionResidue: 20,
+
+      // Temporal layering
+      temporalEcho: 35,
+      temporalEchoDecay: 30,
+      temporalEchoOffset: 6,
+      timeSmear: 25,
+      timeSmearFrames: 4,
+      timeSmearNonLinear: 50,
+      temporalDisplace: 25,
+      temporalDisplaceRegions: 6,
+      temporalDisplaceOffset: 8,
+
+      // Subtle display grit
+      scanlines: true,
+      scanlineIntensity: 10,
+      noise: 10
+    }
   }
 ];
+

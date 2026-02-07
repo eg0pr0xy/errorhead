@@ -12,6 +12,8 @@ interface TimelineProps {
   onDurationChange: (duration: number) => void;
   isActive: boolean;
   onToggleActive: () => void;
+  isPlaying: boolean;
+  onTogglePlayback: () => void;
   fps: number;
 }
 
@@ -24,6 +26,8 @@ export const Timeline: React.FC<TimelineProps> = ({
   onDurationChange,
   isActive,
   onToggleActive,
+  isPlaying,
+  onTogglePlayback,
   fps
 }) => {
   const formatTime = (t: number) => t.toFixed(2);
@@ -40,6 +44,14 @@ export const Timeline: React.FC<TimelineProps> = ({
          <div className="flex gap-4 items-center">
             <Button variant="ghost" size="sm" onClick={onToggleActive} icon={<Icons.Clock />}>
                ENABLE ANIMATION
+            </Button>
+            <Button
+              variant={isPlaying ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={onTogglePlayback}
+              icon={isPlaying ? <Icons.Pause /> : <Icons.Play />}
+            >
+              {isPlaying ? 'PAUSE RENDER' : 'RESUME RENDER'}
             </Button>
          </div>
          <div className="flex items-center gap-6">
@@ -69,6 +81,14 @@ export const Timeline: React.FC<TimelineProps> = ({
                icon={animation.isPlaying ? <Icons.Pause /> : <Icons.Play />}
             >
                {animation.isPlaying ? 'PAUSE' : 'PLAY'}
+            </Button>
+            <Button
+              variant={isPlaying ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={onTogglePlayback}
+              icon={isPlaying ? <Icons.Pause /> : <Icons.Play />}
+            >
+              {isPlaying ? 'PAUSE RENDER' : 'RESUME RENDER'}
             </Button>
             
             <div className="flex items-center gap-1 bg-zinc-900 px-2 py-1 border border-zinc-700">

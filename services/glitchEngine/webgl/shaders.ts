@@ -27,6 +27,9 @@ uniform vec2 u_drift;
 uniform float u_globalRot;
 uniform float u_globalZoom;
 uniform float u_diffusion;
+uniform float u_sculptMask;
+uniform float u_sculptThreshold;
+uniform float u_sculptSoftness;
 
 // Simple hash for noise
 float hash(vec2 p) {
@@ -56,9 +59,14 @@ vec2 getFlow(vec2 p, float time) {
 
 void main() {
     vec2 uv = vUv;
+    vec4 src = texture(u_source, uv);
+    float luma = dot(src.rgb, vec3(0.299, 0.587, 0.114));
+    float t0 = clamp(u_sculptThreshold - u_sculptSoftness, 0.0, 1.0);
+    float t1 = clamp(u_sculptThreshold + u_sculptSoftness, 0.0, 1.0);
+    float sculpt = smoothstep(t0, t1, luma) * clamp(u_sculptMask, 0.0, 1.0);
     
     // 1. Calculate Flow
-    vec2 flow = getFlow(uv, u_time);
+    vec2 flow = getFlow(uv, u_time) * sculpt;
     
     // 2. Apply Global Transforms (Drift, Rot, Zoom)
     vec2 center = vec2(0.5);
@@ -72,27 +80,25 @@ void main() {
     float c = cos(u_globalRot);
     toCenter = vec2(toCenter.x * c - toCenter.y * s, toCenter.x * s + toCenter.y * c);
     
-    vec2 warpedUv = center + toCenter + flow + u_drift;
+    vec2 warpedUv = center + toCenter + flow + (u_drift * sculpt);
+    vec2 finalUv = mix(uv, warpedUv, sculpt);
     
     // 3. Accumulate with Diffusion
     vec4 prev;
     if (u_diffusion > 0.0) {
         vec2 off = u_diffusion / u_resolution;
-        prev = texture(u_prev, warpedUv) * 0.4;
-        prev += texture(u_prev, warpedUv + vec2(off.x, 0.0)) * 0.15;
-        prev += texture(u_prev, warpedUv - vec2(off.x, 0.0)) * 0.15;
-        prev += texture(u_prev, warpedUv + vec2(0.0, off.y)) * 0.15;
-        prev += texture(u_prev, warpedUv - vec2(0.0, off.y)) * 0.15;
+        prev = texture(u_prev, finalUv) * 0.4;
+        prev += texture(u_prev, finalUv + vec2(off.x, 0.0)) * 0.15;
+        prev += texture(u_prev, finalUv - vec2(off.x, 0.0)) * 0.15;
+        prev += texture(u_prev, finalUv + vec2(0.0, off.y)) * 0.15;
+        prev += texture(u_prev, finalUv - vec2(0.0, off.y)) * 0.15;
     } else {
-        prev = texture(u_prev, warpedUv);
+        prev = texture(u_prev, finalUv);
     }
     
-    // 4. Sample Source
-    vec4 src = texture(u_source, vUv);
-    
     // 5. Blend
-    vec4 final = prev * u_persistence;
-    final = mix(final, src, u_injection);
+    vec4 merged = mix(prev * u_persistence, src, u_injection);
+    vec4 final = mix(src, merged, sculpt);
     
     fragColor = vec4(final.rgb, 1.0);
 }

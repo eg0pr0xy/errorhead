@@ -121,6 +121,9 @@ export class WebGLMoshEngine {
     gl.uniform1f(loc('u_globalRot'), (params.flowRotate * Math.PI) / 180);
     gl.uniform1f(loc('u_globalZoom'), params.flowZoom);
     gl.uniform1f(loc('u_diffusion'), params.moshDiffusion || 0);
+    gl.uniform1f(loc('u_sculptMask'), params.sculptMask ?? 0);
+    gl.uniform1f(loc('u_sculptThreshold'), params.sculptThreshold ?? 0.5);
+    gl.uniform1f(loc('u_sculptSoftness'), params.sculptSoftness ?? 0.2);
 
     const posLoc = gl.getAttribLocation(moshProgram, 'position');
     gl.enableVertexAttribArray(posLoc);

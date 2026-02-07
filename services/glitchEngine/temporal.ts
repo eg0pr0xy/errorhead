@@ -9,6 +9,12 @@ import type { EngineContext } from '../../engine/engineTypes';
 import { MAX_HISTORY } from './state';
 import { randInt, noise } from './state';
 
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+// Nonlinear intensity curve to make mid values more visible.
+const curveIntensity = (v01: number) => Math.pow(clamp01(v01), 0.6);
+// Probability curve: boosts lower probabilities without exceeding 1.
+const curveProb = (v01: number) => Math.pow(clamp01(v01), 0.7);
+
 /**
  * TEMPORAL ECHO
  * Past frames reappear with decay, creating ghosting trails
@@ -34,7 +40,7 @@ export const applyTemporalEcho = (
 ) => {
   if (intensity <= 0 || eng.state.historyFrames.length === 0) return;
   
-  const int = Math.max(0, Math.min(100, intensity)) / 100;
+  const int = curveIntensity(Math.max(0, Math.min(100, intensity)) / 100);
   const dec = Math.max(0, Math.min(100, decay)) / 100;
   const offset = Math.floor(Math.max(1, Math.min(60, frameOffset)));
   
@@ -84,7 +90,7 @@ export const applyTimeSmear = (
 ) => {
   if (intensity <= 0 || eng.state.historyFrames.length < 2) return;
   
-  const int = Math.max(0, Math.min(100, intensity)) / 100;
+  const int = curveIntensity(Math.max(0, Math.min(100, intensity)) / 100);
   const count = Math.floor(Math.max(2, Math.min(10, frameCount)));
   const nonLin = Math.max(0, Math.min(100, nonLinear)) / 100;
   
@@ -151,7 +157,7 @@ export const applyReverseBurst = (
 ): boolean => {
   if (probability <= 0 || eng.state.historyFrames.length < 3) return false;
   
-  const prob = Math.max(0, Math.min(100, probability));
+  const prob = curveProb(Math.max(0, Math.min(100, probability)) / 100) * 100;
   const dur = Math.floor(Math.max(2, Math.min(30, duration)));
   
   // Initialize burst state if not exists
@@ -228,7 +234,7 @@ export const applyStutterLock = (
 ): boolean => {
   if (probability <= 0) return false;
   
-  const prob = Math.max(0, Math.min(100, probability));
+  const prob = curveProb(Math.max(0, Math.min(100, probability)) / 100) * 100;
   const minDur = Math.floor(Math.max(1, Math.min(10, minDuration)));
   const maxDur = Math.floor(Math.max(minDur, Math.min(30, maxDuration)));
   
@@ -313,7 +319,7 @@ export const applyTemporalDisplacement = (
 ) => {
   if (intensity <= 0 || eng.state.historyFrames.length < 2) return;
   
-  const int = Math.max(0, Math.min(100, intensity)) / 100;
+  const int = curveIntensity(Math.max(0, Math.min(100, intensity)) / 100);
   const regions = Math.floor(Math.max(1, Math.min(20, regionCount)));
   const maxOffset = Math.floor(Math.max(1, Math.min(30, maxFrameOffset)));
   
