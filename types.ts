@@ -195,6 +195,7 @@ export interface GlitchParams {
   phaseOffsetX?: number;
   phaseSpeedX?: number;
   phaseJitter?: number;
+  analogInertia?: number;
   wrapMode?: 'hard' | 'soft';
   banding?: 'line' | 'block';
   // Horizontal Drift + Wave (Analog Sync Distortion extension)

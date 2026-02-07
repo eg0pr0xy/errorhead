@@ -160,6 +160,7 @@ export const DEFAULT_PARAMS: GlitchParams = {
   phaseOffsetX: 0,
   phaseSpeedX: 0,
   phaseJitter: 0,
+  analogInertia: 0.85,
   wrapMode: 'hard',
   banding: 'line',
   // Horizontal Drift + Wave (off by default)

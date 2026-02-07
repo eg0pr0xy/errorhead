@@ -1,10 +1,31 @@
 import { GlitchParams } from '../../types';
 
+class VerletValue {
+  value: number;
+  prev: number;
+  damping: number;
+
+  constructor(initialValue = 0, damping = 0.85) {
+    this.value = initialValue;
+    this.prev = initialValue;
+    this.damping = damping;
+  }
+
+  update(force = 0) {
+    const next = this.value + (this.value - this.prev) * this.damping + force;
+    this.prev = this.value;
+    this.value = next;
+    return next;
+  }
+}
+
+const clamp01 = (v: number) => Math.max(0, Math.min(0.99, v));
+
 // Persistent phase accumulators (module scope)
-let phaseAccY = 0;
-let phaseAccX = 0;
+const phaseAccYVerlet = new VerletValue(0, 0.85);
+const phaseAccXVerlet = new VerletValue(0, 0.85);
+const waveAccVerlet = new VerletValue(0, 0.85);
 let hAcc = 0;
-let waveAcc = 0;
 
 /**
  * Analog Phase Slip
@@ -37,6 +58,7 @@ export function applyAnalogPhaseSlip(
   const waveFrequency = params.waveFrequency ?? 0;
   const waveSpeed = params.waveSpeed ?? 0;
   const wavePhase = params.wavePhase ?? 0;
+  const analogInertia = clamp01(params.analogInertia ?? 0.85);
 
   if (!phaseEnabled) return;
   if (
@@ -54,11 +76,17 @@ export function applyAnalogPhaseSlip(
     wavePhase === 0
   ) return;
 
+  let phaseAccY = phaseAccYVerlet.value;
+  let phaseAccX = phaseAccXVerlet.value;
+  let waveAcc = waveAccVerlet.value;
   if (isPlaying) {
-    phaseAccY += phaseSpeed;
-    phaseAccX += phaseSpeedX;
+    phaseAccYVerlet.damping = analogInertia;
+    phaseAccXVerlet.damping = analogInertia;
+    waveAccVerlet.damping = analogInertia;
+    phaseAccY = phaseAccYVerlet.update(phaseSpeed);
+    phaseAccX = phaseAccXVerlet.update(phaseSpeedX);
+    waveAcc = waveAccVerlet.update(waveSpeed);
     hAcc += hSpeed;
-    waveAcc += waveSpeed;
   }
   const totalOffsetY = phaseOffset + phaseAccY;
   const baseShiftY = ((totalOffsetY % height) + height) % height;
