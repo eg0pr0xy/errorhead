@@ -6,7 +6,7 @@ import { Preset, GlitchParams } from '../../types';
 
 interface FilePanelProps {
   onFileSelect: (file: File) => void;
-  onImportLink: () => void;
+  onImportLink: (url: string, mediaType: 'auto' | 'image' | 'video') => void;
   onWebcamStart: () => void;
   onWebcamStop: () => void;
   isWebcamActive: boolean;
@@ -45,7 +45,7 @@ interface FilePanelProps {
 
 export const FilePanel: React.FC<FilePanelProps> = ({ 
   onFileSelect, 
-  onImportLink,
+  onImportLink: _onImportLink,
   onWebcamStart,
   onWebcamStop,
   isWebcamActive,
@@ -81,8 +81,10 @@ export const FilePanel: React.FC<FilePanelProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
+  const linkNoticeTimerRef = useRef<number | null>(null);
   const [exportMode, setExportMode] = useState<'image' | 'video'>('image');
   const [recordDuration, setRecordDuration] = useState<number>(0);
+  const [showLinkImportNotice, setShowLinkImportNotice] = useState(false);
 
     
 
@@ -94,6 +96,14 @@ export const FilePanel: React.FC<FilePanelProps> = ({
       setExportMode('image');
     }
   }, [isVideo, isAnimationActive]);
+
+  useEffect(() => {
+    return () => {
+      if (linkNoticeTimerRef.current !== null) {
+        window.clearTimeout(linkNoticeTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -168,6 +178,17 @@ export const FilePanel: React.FC<FilePanelProps> = ({
     return "START/STOP RECORDING";
   };
 
+  const handleImportLinkUnavailable = () => {
+    if (linkNoticeTimerRef.current !== null) {
+      window.clearTimeout(linkNoticeTimerRef.current);
+    }
+    setShowLinkImportNotice(true);
+    linkNoticeTimerRef.current = window.setTimeout(() => {
+      setShowLinkImportNotice(false);
+      linkNoticeTimerRef.current = null;
+    }, 2200);
+  };
+
   return (
     <div className="h-full flex flex-col gap-2">
       <Panel title="INPUT SOURCE" className="h-auto min-h-[140px] flex-shrink-0">
@@ -197,7 +218,10 @@ export const FilePanel: React.FC<FilePanelProps> = ({
               variant="secondary"
               size="sm"
               icon={<Icons.Link />}
-              onClick={onImportLink}
+              className="border-zinc-800 text-zinc-600 opacity-55 saturate-0 hover:border-zinc-800 hover:text-zinc-600"
+              aria-disabled="true"
+              title="In dieser Version ohne Backend nicht verfuegbar"
+              onClick={handleImportLinkUnavailable}
             >
               IMPORT LINK
             </Button>
@@ -221,6 +245,11 @@ export const FilePanel: React.FC<FilePanelProps> = ({
               </Button>
             )}
           </div>
+          {showLinkImportNotice && (
+            <p className="text-[10px] text-zinc-500 border border-zinc-800 bg-zinc-950/60 px-2 py-1">
+              Link-Import ist in dieser Version ohne Backend nicht moeglich.
+            </p>
+          )}
           <input 
             type="file" 
             ref={fileInputRef} 

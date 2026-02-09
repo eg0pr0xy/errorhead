@@ -392,10 +392,8 @@ const EditorApp: React.FC = () => {
     }
   };
 
-  const handleImportLink = async () => {
-    const raw = window.prompt('Paste direct media URL (image/video file):');
-    if (!raw) return;
-    const url = raw.trim();
+  const handleImportLink = async (rawUrl: string, requestedType: 'auto' | 'image' | 'video') => {
+    const url = rawUrl.trim();
     if (!url) return;
     if (!/^https?:\/\//i.test(url)) {
       addLog('Link import: invalid URL');
@@ -409,7 +407,10 @@ const EditorApp: React.FC = () => {
     }
 
     const inferred = guessMediaTypeFromUrl(url);
-    const targetType = inferred || ((window.prompt('Type? "video" or "image"', 'video') || '').toLowerCase() === 'image' ? 'image' : 'video');
+    const targetType: 'image' | 'video' =
+      requestedType === 'auto'
+        ? (inferred || 'video')
+        : requestedType;
 
     try {
       tGlobalRef.current = 0;
