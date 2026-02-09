@@ -6,6 +6,7 @@ import { Preset, GlitchParams } from '../../types';
 
 interface FilePanelProps {
   onFileSelect: (file: File) => void;
+  onImportLink: () => void;
   onWebcamStart: () => void;
   onWebcamStop: () => void;
   isWebcamActive: boolean;
@@ -44,6 +45,7 @@ interface FilePanelProps {
 
 export const FilePanel: React.FC<FilePanelProps> = ({ 
   onFileSelect, 
+  onImportLink,
   onWebcamStart,
   onWebcamStop,
   isWebcamActive,
@@ -194,10 +196,10 @@ export const FilePanel: React.FC<FilePanelProps> = ({
             <Button
               variant="secondary"
               size="sm"
-              icon={<Icons.Upload />}
-              onClick={() => fileInputRef.current?.click()}
+              icon={<Icons.Link />}
+              onClick={onImportLink}
             >
-              IMPORT FILE
+              IMPORT LINK
             </Button>
             {isWebcamActive ? (
               <Button

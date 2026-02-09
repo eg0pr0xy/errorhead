@@ -1,4 +1,4 @@
-import React, { MutableRefObject } from 'react';
+import React from 'react';
 
 /*
  * MEDIA IMPORT — KNOWN-GOOD SHARED ENTRY (DO NOT SPLIT)
@@ -39,6 +39,17 @@ export interface MediaLoadResult {
   height: number;
 }
 
+function assertCanvasReadable(source: CanvasImageSource) {
+  const probe = document.createElement('canvas');
+  probe.width = 1;
+  probe.height = 1;
+  const ctx = probe.getContext('2d');
+  if (!ctx) return;
+  ctx.drawImage(source, 0, 0, 1, 1);
+  // Throws SecurityError for tainted cross-origin media.
+  ctx.getImageData(0, 0, 1, 1);
+}
+
 export function revokeUrl(ref: React.MutableRefObject<string | null>) {
   if (ref.current) {
     try { URL.revokeObjectURL(ref.current); } catch (e) {}
@@ -75,6 +86,30 @@ export function loadImageTo(img: HTMLImageElement, canvas: HTMLCanvasElement | n
   });
 }
 
+export function loadImageUrlTo(img: HTMLImageElement, canvas: HTMLCanvasElement | null, url: string, lastUrlRef: React.MutableRefObject<string | null>): Promise<MediaLoadResult> {
+  revokeUrl(lastUrlRef);
+  return new Promise((resolve, reject) => {
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        assertCanvasReadable(img);
+      } catch (err) {
+        reject(new Error('Remote image blocks CORS/canvas access. Use direct media URL or backend proxy.'));
+        return;
+      }
+      const w = img.naturalWidth || img.width || 0;
+      const h = img.naturalHeight || img.height || 0;
+      if (canvas && w > 0 && h > 0) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      resolve({ url, width: w, height: h });
+    };
+    img.onerror = (e) => reject(e as any);
+    img.src = url;
+  });
+}
+
 export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement | null, file: File, lastUrlRef: React.MutableRefObject<string | null>): Promise<MediaLoadResult> {
   // NOTE: onloadedmetadata is the earliest reliable point where
   // videoWidth/videoHeight are populated across browsers. Do not replace
@@ -104,6 +139,43 @@ export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement |
     try { video.load(); } catch (e) {}
     // Attempt autoplay (muted/inline)
     video.play().then(() => { try { console.log('[Import] video play started'); } catch (e) {} }).catch(() => {/* autoplay may be blocked; user can press play */});
+  });
+}
+
+export function loadVideoUrlTo(video: HTMLVideoElement, canvas: HTMLCanvasElement | null, url: string, lastUrlRef: React.MutableRefObject<string | null>): Promise<MediaLoadResult> {
+  revokeUrl(lastUrlRef);
+  return new Promise((resolve, reject) => {
+    stopStreamOnVideo(video);
+    video.crossOrigin = 'anonymous';
+    const onMeta = () => {
+      const w = video.videoWidth || 0;
+      const h = video.videoHeight || 0;
+      if (canvas && w > 0 && h > 0) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      const testReadability = () => {
+        try {
+          assertCanvasReadable(video);
+        } catch (err) {
+          reject(new Error('Remote video blocks CORS/canvas access. Use direct media URL or backend proxy.'));
+          return;
+        }
+        resolve({ url, width: w, height: h });
+      };
+
+      if (video.readyState >= 2) {
+        testReadability();
+      } else {
+        video.onloadeddata = () => testReadability();
+      }
+    };
+    video.onloadedmetadata = onMeta;
+    video.onerror = (e) => reject(e as any);
+    video.src = url;
+    try { video.load(); } catch (e) {}
+    video.play().catch(() => {});
   });
 }
 

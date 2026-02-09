@@ -4,7 +4,7 @@ import { FilePanel } from './components/Panels/FilePanel';
 import { ControlPanel } from './components/Panels/ControlPanel';
 import { Timeline } from './components/Timeline';
 import { renderGlitch, resetGlitchState } from './frame_pipeline/pipeline';
-import { loadImageTo, loadVideoTo, loadWebcamTo, stopStreamOnVideo } from './media_loader/mediaLoader';
+import { loadImageTo, loadVideoTo, loadImageUrlTo, loadVideoUrlTo, loadWebcamTo, stopStreamOnVideo } from './media_loader/mediaLoader';
 import { exportCanvasImage, startCanvasRecording, stopCanvasRecording } from './export/exportService';
 import { audioService } from './services/audioService';
 import { getVideoDims } from './services/mediaUtils';
@@ -363,6 +363,100 @@ const EditorApp: React.FC = () => {
 
   const handleStopWebcam = () => {
     stopWebcamSource({ clearVideoSource: true });
+  };
+
+  const guessMediaTypeFromUrl = (rawUrl: string): 'image' | 'video' | null => {
+    try {
+      const u = new URL(rawUrl);
+      const p = u.pathname.toLowerCase();
+      if (/\.(png|jpe?g|gif|webp|bmp|avif)(\?|$)/.test(p)) return 'image';
+      if (/\.(mp4|webm|mov|m4v|ogg|ogv)(\?|$)/.test(p)) return 'video';
+    } catch {}
+    return null;
+  };
+
+  const isSocialPageUrl = (rawUrl: string) => {
+    try {
+      const host = new URL(rawUrl).hostname.toLowerCase();
+      return (
+        host.includes('youtube.com') ||
+        host.includes('youtu.be') ||
+        host.includes('tiktok.com') ||
+        host.includes('instagram.com') ||
+        host.includes('facebook.com') ||
+        host.includes('x.com') ||
+        host.includes('twitter.com')
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const handleImportLink = async () => {
+    const raw = window.prompt('Paste direct media URL (image/video file):');
+    if (!raw) return;
+    const url = raw.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) {
+      addLog('Link import: invalid URL');
+      showToast('Invalid URL. Use https://...');
+      return;
+    }
+    if (isSocialPageUrl(url)) {
+      addLog('Link import: social page URL requires backend extractor');
+      showToast('YouTube/TikTok links need backend extraction/proxy.');
+      return;
+    }
+
+    const inferred = guessMediaTypeFromUrl(url);
+    const targetType = inferred || ((window.prompt('Type? "video" or "image"', 'video') || '').toLowerCase() === 'image' ? 'image' : 'video');
+
+    try {
+      tGlobalRef.current = 0;
+      resetGlitchState();
+      stopWebcamSource({ silent: true });
+      setFileName('link-source');
+
+      if (targetType === 'video') {
+        const video = videoRef.current;
+        if (!video) {
+          addLog('Video element missing');
+          return;
+        }
+        const result = await loadVideoUrlTo(video, canvasRef.current, url, lastObjectUrlRef);
+        setSourceType('video');
+        sourceTypeRef.current = 'video';
+        setIsVideoPlaying(!video.paused);
+        addLog(`Link video ready: ${result.width}x${result.height}`);
+        if (!isPlayingRef.current) {
+          try { video.pause(); } catch {}
+        }
+        if (paramsRef.current.audioEnabled && paramsRef.current.audioSource === 'video') {
+          if (!videoAudioStateRef.current) {
+            videoAudioStateRef.current = { muted: video.muted, volume: video.volume };
+          }
+          video.muted = false;
+          if (video.volume < 0.2) video.volume = 0.4;
+          audioService.connectMedia(video);
+        }
+        return;
+      }
+
+      const img = imgRef.current;
+      if (!img) {
+        addLog('Image element missing');
+        return;
+      }
+      const result = await loadImageUrlTo(img, canvasRef.current, url, lastObjectUrlRef);
+      setSourceType('image');
+      sourceTypeRef.current = 'image';
+      setIsVideoPlaying(false);
+      addLog(`Link image ready: ${result.width}x${result.height}`);
+    } catch (err: any) {
+      console.error('[Import] Link load error:', err);
+      addLog('Link import failed');
+      showToast(err?.message || 'Link import failed');
+    }
   };
 
 
@@ -769,6 +863,7 @@ const EditorApp: React.FC = () => {
         leftPanel={
           <FilePanel
             onFileSelect={handleFileSelect}
+            onImportLink={handleImportLink}
             onWebcamStart={handleStartWebcam}
             onWebcamStop={handleStopWebcam}
             isWebcamActive={isWebcamActive}
