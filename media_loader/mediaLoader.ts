@@ -107,3 +107,58 @@ export function loadVideoTo(video: HTMLVideoElement, canvas: HTMLCanvasElement |
   });
 }
 
+export function stopStreamOnVideo(video: HTMLVideoElement) {
+  const stream = video.srcObject;
+  if (stream instanceof MediaStream) {
+    for (const track of stream.getTracks()) {
+      try { track.stop(); } catch (e) {}
+    }
+  }
+  try { video.pause(); } catch (e) {}
+  video.srcObject = null;
+}
+
+export function loadWebcamTo(video: HTMLVideoElement, canvas: HTMLCanvasElement | null): Promise<MediaLoadResult & { stream: MediaStream }> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        reject(new Error('Webcam API not available in this browser'));
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+        },
+        audio: false,
+      });
+
+      stopStreamOnVideo(video);
+      try {
+        video.removeAttribute('src');
+        video.load();
+      } catch (e) {}
+
+      const onMeta = () => {
+        const w = video.videoWidth || 0;
+        const h = video.videoHeight || 0;
+        if (canvas && w > 0 && h > 0) {
+          canvas.width = w;
+          canvas.height = h;
+          console.log(`[Import] Webcam ready: ${w}x${h}, canvas set to ${canvas.width}x${canvas.height}`);
+        }
+        video.play().catch(() => {});
+        resolve({ url: 'webcam://live', width: w, height: h, stream });
+      };
+
+      video.onloadedmetadata = onMeta;
+      video.onerror = (e) => reject(e as any);
+      video.muted = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+

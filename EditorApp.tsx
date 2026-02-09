@@ -4,7 +4,7 @@ import { FilePanel } from './components/Panels/FilePanel';
 import { ControlPanel } from './components/Panels/ControlPanel';
 import { Timeline } from './components/Timeline';
 import { renderGlitch, resetGlitchState } from './frame_pipeline/pipeline';
-import { loadImageTo, loadVideoTo } from './media_loader/mediaLoader';
+import { loadImageTo, loadVideoTo, loadWebcamTo, stopStreamOnVideo } from './media_loader/mediaLoader';
 import { exportCanvasImage, startCanvasRecording, stopCanvasRecording } from './export/exportService';
 import { audioService } from './services/audioService';
 import { getVideoDims } from './services/mediaUtils';
@@ -59,6 +59,7 @@ const EditorApp: React.FC = () => {
   });
 
   const [sourceType, setSourceType] = useState<'image' | 'video' | null>(null);
+  const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [fileName, setFileName] = useState<string>('');
   const [exportQuality, setExportQuality] = useState<number>(90);
@@ -105,6 +106,7 @@ const EditorApp: React.FC = () => {
   const animStateRef = useRef(animState);
   const liveModeRef = useRef(liveMode);
   const sourceTypeRef = useRef(sourceType);
+  const isWebcamActiveRef = useRef(isWebcamActive);
   const isVideoPlayingRef = useRef(isVideoPlaying);
   const animationModeRef = useRef(animationMode);
   const isPlayingRef = useRef(isPlaying);
@@ -167,6 +169,7 @@ const EditorApp: React.FC = () => {
   useEffect(() => { animStateRef.current = animState; }, [animState]);
   useEffect(() => { liveModeRef.current = liveMode; }, [liveMode]);
   useEffect(() => { sourceTypeRef.current = sourceType; }, [sourceType]);
+  useEffect(() => { isWebcamActiveRef.current = isWebcamActive; }, [isWebcamActive]);
   useEffect(() => { isVideoPlayingRef.current = isVideoPlaying; }, [isVideoPlaying]);
   useEffect(() => { animationModeRef.current = animationMode; }, [animationMode]);
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
@@ -238,6 +241,24 @@ const EditorApp: React.FC = () => {
           }
       }
   };
+
+  const stopWebcamSource = (opts?: { clearVideoSource?: boolean; silent?: boolean }) => {
+    if (!isWebcamActiveRef.current) return;
+    const video = videoRef.current;
+    if (video) {
+      stopStreamOnVideo(video);
+    }
+    setIsWebcamActive(false);
+    isWebcamActiveRef.current = false;
+    setIsVideoPlaying(false);
+    if (opts?.clearVideoSource && sourceTypeRef.current === 'video') {
+      setSourceType(null);
+      sourceTypeRef.current = null;
+    }
+    if (!opts?.silent) {
+      addLog('Webcam stopped');
+    }
+  };
   
   // Simple media handler using the shared media loader
   const handleFileSelect = async (file: File) => {
@@ -248,6 +269,7 @@ const EditorApp: React.FC = () => {
     // Reset temporal state and effect engine without forcing playback
     tGlobalRef.current = 0;
     resetGlitchState();
+    stopWebcamSource({ silent: true });
 
     const isVideo = file.type.startsWith('video/');
     const nextType: 'image' | 'video' = isVideo ? 'video' : 'image';
@@ -295,6 +317,52 @@ const EditorApp: React.FC = () => {
       console.error('[Import] Image load error:', err);
       addLog('Image load error');
     }
+  };
+
+  const handleStartWebcam = async () => {
+    const video = videoRef.current;
+    if (!video) {
+      addLog('Video element missing');
+      return;
+    }
+
+    try {
+      const result = await loadWebcamTo(video, canvasRef.current);
+      if (lastObjectUrlRef.current) {
+        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch {}
+        lastObjectUrlRef.current = null;
+      }
+
+      tGlobalRef.current = 0;
+      resetGlitchState();
+      setSourceType('video');
+      sourceTypeRef.current = 'video';
+      setIsWebcamActive(true);
+      isWebcamActiveRef.current = true;
+      setIsVideoPlaying(!video.paused);
+      setFileName('webcam-live');
+      addLog(`Webcam live: ${result.width}x${result.height}`);
+
+      if (!isPlayingRef.current) {
+        try { video.pause(); } catch {}
+      }
+      if (paramsRef.current.audioEnabled && paramsRef.current.audioSource === 'video') {
+        if (!videoAudioStateRef.current) {
+          videoAudioStateRef.current = { muted: video.muted, volume: video.volume };
+        }
+        video.muted = false;
+        if (video.volume < 0.2) video.volume = 0.4;
+        audioService.connectMedia(video);
+      }
+    } catch (err: any) {
+      console.error('[Import] Webcam start error:', err);
+      const reason = err?.name ? ` (${err.name})` : '';
+      addLog(`Webcam access failed${reason}`);
+    }
+  };
+
+  const handleStopWebcam = () => {
+    stopWebcamSource({ clearVideoSource: true });
   };
 
 
@@ -595,6 +663,7 @@ const EditorApp: React.FC = () => {
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
+      stopWebcamSource({ silent: true });
       if (lastObjectUrlRef.current) {
         try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch {}
         lastObjectUrlRef.current = null;
@@ -700,6 +769,9 @@ const EditorApp: React.FC = () => {
         leftPanel={
           <FilePanel
             onFileSelect={handleFileSelect}
+            onWebcamStart={handleStartWebcam}
+            onWebcamStop={handleStopWebcam}
+            isWebcamActive={isWebcamActive}
             onPresetSelect={applyPreset}
             activePresetId={activePresetId}
             exportQuality={exportQuality}

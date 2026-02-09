@@ -6,6 +6,9 @@ import { Preset, GlitchParams } from '../../types';
 
 interface FilePanelProps {
   onFileSelect: (file: File) => void;
+  onWebcamStart: () => void;
+  onWebcamStop: () => void;
+  isWebcamActive: boolean;
   onPresetSelect: (preset: Preset) => void;
   activePresetId?: string;
   exportQuality: number;
@@ -41,6 +44,9 @@ interface FilePanelProps {
 
 export const FilePanel: React.FC<FilePanelProps> = ({ 
   onFileSelect, 
+  onWebcamStart,
+  onWebcamStop,
+  isWebcamActive,
   onPresetSelect, 
   activePresetId,
   exportQuality,
@@ -174,9 +180,33 @@ export const FilePanel: React.FC<FilePanelProps> = ({
           </div>
           <div className="text-center">
             <p className="text-xs font-bold text-zinc-400 group-hover:text-white">
-               {isVideo ? 'VIDEO LOADED' : 'DROP FILE'}
+               {isWebcamActive ? 'WEBCAM LIVE' : (isVideo ? 'VIDEO LOADED' : 'DROP FILE')}
             </p>
             <p className="text-[10px] text-zinc-600 mt-1">PNG, JPG, GIF, MP4, MOV</p>
+          </div>
+          <div
+            className="mt-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isWebcamActive ? (
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<Icons.Stop />}
+                onClick={onWebcamStop}
+              >
+                STOP WEBCAM
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Icons.Video />}
+                onClick={onWebcamStart}
+              >
+                START WEBCAM
+              </Button>
+            )}
           </div>
           <input 
             type="file" 
