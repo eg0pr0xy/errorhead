@@ -169,25 +169,36 @@ export const FilePanel: React.FC<FilePanelProps> = ({
   return (
     <div className="h-full flex flex-col gap-2">
       <Panel title="INPUT SOURCE" className="h-auto min-h-[140px] flex-shrink-0">
-        <div 
-          className="absolute inset-2 border-2 border-dashed border-zinc-800 hover:border-cyan-500/50 hover:bg-zinc-900/30 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group"
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <div className={`p-3 rounded-full transition-all ${isVideo ? 'bg-cyan-900/50 text-cyan-400' : 'bg-zinc-900 text-zinc-500 group-hover:text-cyan-400 group-hover:scale-110'}`}>
-            {isVideo ? <Icons.Video /> : <Icons.Upload />}
-          </div>
-          <div className="text-center">
-            <p className="text-xs font-bold text-zinc-400 group-hover:text-white">
-               {isWebcamActive ? 'WEBCAM LIVE' : (isVideo ? 'VIDEO LOADED' : 'DROP FILE')}
-            </p>
-            <p className="text-[10px] text-zinc-600 mt-1">PNG, JPG, GIF, MP4, MOV</p>
-          </div>
-          <div
-            className="mt-1"
-            onClick={(e) => e.stopPropagation()}
+        <div className="p-2 flex flex-col gap-2">
+          <div 
+            className="border-2 border-dashed border-zinc-800 hover:border-cyan-500/50 hover:bg-zinc-900/30 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group min-h-[92px]"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onClick={() => fileInputRef.current?.click()}
           >
+            <div className={`p-2 rounded-full transition-all ${isVideo ? 'bg-cyan-900/50 text-cyan-400' : 'bg-zinc-900 text-zinc-500 group-hover:text-cyan-400 group-hover:scale-110'}`}>
+              {isVideo ? <Icons.Video /> : <Icons.Upload />}
+            </div>
+            <div className="text-center leading-tight">
+              <p className="text-xs font-bold text-zinc-400 group-hover:text-white">
+                 DROP FILE OR CLICK TO BROWSE
+              </p>
+              <p className="text-[10px] text-zinc-600 mt-1">PNG, JPG, GIF, MP4, MOV</p>
+              <p className="text-[10px] mt-1 text-cyan-400/80">
+                {isWebcamActive ? 'LIVE SOURCE: WEBCAM' : (isVideo ? 'SOURCE: VIDEO FILE' : 'SOURCE: NONE')}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Icons.Upload />}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              IMPORT FILE
+            </Button>
             {isWebcamActive ? (
               <Button
                 variant="danger"
