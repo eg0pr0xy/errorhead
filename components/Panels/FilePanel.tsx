@@ -220,7 +220,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
               icon={<Icons.Link />}
               className="border-zinc-800 text-zinc-600 opacity-55 saturate-0 hover:border-zinc-800 hover:text-zinc-600"
               aria-disabled="true"
-              title="In dieser Version ohne Backend nicht verfuegbar"
+              title="Not available in this version without a backend"
               onClick={handleImportLinkUnavailable}
             >
               IMPORT LINK
@@ -247,7 +247,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
           </div>
           {showLinkImportNotice && (
             <p className="text-[10px] text-zinc-500 border border-zinc-800 bg-zinc-950/60 px-2 py-1">
-              Link-Import ist in dieser Version ohne Backend nicht moeglich.
+              Link import is not available in this version without a backend.
             </p>
           )}
           <input 
