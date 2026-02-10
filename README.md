@@ -1,12 +1,4 @@
-<div align="center">
-  <img width="1200" height="475" alt="ERRORHEAD banner" src="https://github.com/user-attachments/assets/" />
-</div>
-
-```txt
-:: ERRORHEAD :: ENTROPY ENGINE
-signal state ........ unstable
-mode ................ realtime glitch lab
-```
+# ERRORHEAD
 
 <div align="center">
 
