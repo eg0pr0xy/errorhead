@@ -23,7 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Keep docs private: ignore markdown except README
-*.md
-!README.md
+# Keep docs private: ignore all markdown except root README
+**/*.md
+!/README.md
+!/readme.md
 
